@@ -30,6 +30,7 @@ client/obj/nonce2key/*.o
 client/flasher
 client/proxguiqt.moc.cpp
 client/proxmark3
+client/proxmark3.log
 liblua/*.o
 liblua/liblua.a
 liblua/lua
