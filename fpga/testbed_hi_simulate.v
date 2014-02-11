@@ -72,12 +72,12 @@ module testbed_hi_simulate;
 	integer idx, i;
 
 	// main clock
-	always #5 begin 
+	always #5 begin
 		ck_1356megb = !ck_1356megb;
 		ck_1356meg = ck_1356megb;
 	end
 
-	always begin 
+	always begin
 		@(negedge adc_clk) ;
 		adc_d = $random;
 	end
@@ -111,6 +111,6 @@ module testbed_hi_simulate;
 		end
 		$finish;
 	end
-	
+
 endmodule // main
 

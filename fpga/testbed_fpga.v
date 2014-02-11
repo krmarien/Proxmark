@@ -46,5 +46,5 @@ module testbed_fpga;
 		#50 mosi=1;
 		$finish;
 	end
-	
+
 endmodule // main

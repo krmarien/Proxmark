@@ -72,7 +72,7 @@ module testbed_hi_read_tx;
 	integer idx, i;
 
 	// main clock
-	always #5 begin 
+	always #5 begin
 		ck_1356megb = !ck_1356megb;
 		ck_1356meg = ck_1356megb;
 	end
@@ -105,5 +105,5 @@ module testbed_hi_read_tx;
 		end
 		$finish;
 	end
-	
+
 endmodule // main

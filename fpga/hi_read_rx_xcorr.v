@@ -50,7 +50,7 @@ always @(xcorr_is_848 or xcorr_quarter_freq or ck_1356meg)
     if(~xcorr_quarter_freq)
     begin
 	    if(xcorr_is_848)
-	        // The subcarrier frequency is fc/16; we will sample at fc, so that 
+	        // The subcarrier frequency is fc/16; we will sample at fc, so that
 	        // means the subcarrier is 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 1 1 ...
 	        adc_clk <= ck_1356meg;
 	    else

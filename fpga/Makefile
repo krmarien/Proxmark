@@ -31,6 +31,6 @@ fpga.bit: fpga-placed.ncd
 help:
 	@echo Multi-OS Makefile, you are running on $(DETECTED_OS)
 	@echo Possible targets:
-	@echo +	all   - Make fpga.bit, the FPGA bitstream 
+	@echo +	all   - Make fpga.bit, the FPGA bitstream
 	@echo +	clean - Clean intermediate files, does not clean fpga.bit
-	
+

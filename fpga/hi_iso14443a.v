@@ -39,9 +39,9 @@ reg [2:0] deep_counter;
 reg deep_modulation;
 always @(negedge adc_clk)
 begin
-	if(& adc_d[7:6]) after_hysteresis <= 1'b1;			// if adc_d >= 196 
+	if(& adc_d[7:6]) after_hysteresis <= 1'b1;			// if adc_d >= 196
     else if(~(| adc_d[7:4])) after_hysteresis <= 1'b0;  // if adc_d <= 15
-	
+
 	if(~(| adc_d[7:0]))
 	begin
 		if(deep_counter == 3'd7)
@@ -60,7 +60,7 @@ begin
 		else
 			saw_deep_modulation <= saw_deep_modulation + 1;
 	end
-	
+
 	if(after_hysteresis)
     begin
         has_been_low_for <= 7'b0;
@@ -136,16 +136,16 @@ begin
 	// fdt = 1236, if last bit was 1.
 	// the FPGA takes care for the 1172 delay. To achieve the additional 1236-1172=64 ticks delay, the ARM must send an additional correction bit (before the start bit).
 	// The correction bit will be coded as 00010000, i.e. it adds 4 bits to the transmission stream, causing the required delay.
-	if(fdt_counter == 11'd740) fdt_indicator = 1'b1; 	// fdt_indicator is true for 740 <= fdt_counter <= 1148. Ready to buffer data. (?) 
-														// Shouldn' this be 1236 - 720 = 516? (The mod_sig_buf can buffer 46 data bits, 
+	if(fdt_counter == 11'd740) fdt_indicator = 1'b1; 	// fdt_indicator is true for 740 <= fdt_counter <= 1148. Ready to buffer data. (?)
+														// Shouldn' this be 1236 - 720 = 516? (The mod_sig_buf can buffer 46 data bits,
 														// i.e. a maximum delay of 46 * 16 = 720 adc_clk ticks)
-	
+
 	if(fdt_counter == 11'd1148) // additional 16 (+ eventual n*128) adc_clk_ticks delay will be added by the mod_sig_buf below
 								// the remaining 8 ticks delay comes from the 8 ticks timing difference between reseting fdt_counter and the mod_sig_buf clock.
 	begin
 		if(fdt_elapsed)
 		begin
-			if(negedge_cnt[3:0] == mod_sig_flip[3:0]) mod_sig_coil <= mod_sig; // start modulating (if mod_sig is already set) 
+			if(negedge_cnt[3:0] == mod_sig_flip[3:0]) mod_sig_coil <= mod_sig; // start modulating (if mod_sig is already set)
 		end
 		else
 		begin
@@ -162,8 +162,8 @@ begin
 	begin
 		fdt_counter <= fdt_counter + 1; // Count until 1148
 	end
-	
-	
+
+
 	//-------------------------------------------------------------------------------------------------------------------------------------------
 	// Relevant for READER_LISTEN only
 	// look for steepest falling and rising edges:
@@ -177,14 +177,14 @@ begin
 		if (-adc_d_filtered > rx_mod_rising_edge_max)
 			rx_mod_rising_edge_max <= -adc_d_filtered;
 		end
-		
+
 	// store previous samples for filtering and edge detection:
 	adc_d_4 <= adc_d_3;
 	adc_d_3 <= adc_d_2;
 	adc_d_2 <= adc_d_1;
 	adc_d_1 <= adc_d;
 
-		
+
 
 	if(& negedge_cnt[3:0])  // == 0xf == 15
 	begin
@@ -198,19 +198,19 @@ begin
 			temp_buffer_reset = 1'b0;
 			mod_sig_ptr <= 6'b000000;
 		end
-		
+
 		// Relevant for READER_LISTEN only
 		// detect modulation signal: if modulating, there must be a falling and a rising edge ... and vice versa
 		if (rx_mod_falling_edge_max > 6 && rx_mod_rising_edge_max > 6)
 				curbit = 1'b1;	// modulation
 			else
 				curbit = 1'b0;	// no modulation
-				
+
 		// prepare next edge detection:
 		rx_mod_rising_edge_max <= 0;
 		rx_mod_falling_edge_max <= 0;
-	
-	
+
+
 		// What do we communicate to the ARM
 		if(mod_type == 3'b001) sendbit = after_hysteresis;		// TAGSIM_LISTEN
 		else if(mod_type == 3'b010)								// TAGSIM_MOD
@@ -237,7 +237,7 @@ begin
 		end
 
         negedge_cnt <= 0;
-	
+
 	end
     else
     begin
@@ -259,7 +259,7 @@ begin
         after_hysteresis_prev3 <= after_hysteresis;
 		bit3 <= curbit;
 	end
-	
+
 	//--------------------------------------------------------------------------------------------------------------------------------------------------------------
 	// Relevant in TAGSIM_MOD only. Delay-Line to buffer data and send it at the correct time
 	// Note: Data in READER_MOD is fed through this delay line as well.
@@ -277,12 +277,12 @@ begin
 					mod_sig_ptr <= 6'b000000;
 				end
 				else mod_sig_ptr <= mod_sig_ptr + 1;							// increase buffer (= increase delay by 16 adc_clk ticks). ptr always points to first 1.
-			else if(fdt_elapsed && ~temp_buffer_reset)							
+			else if(fdt_elapsed && ~temp_buffer_reset)
 			// fdt_elapsed. If we didn't receive a 1 yet, ptr will be at 9 and not yet fixed. Otherwise temp_buffer_reset will be 1 already.
 			begin
 				// wait for the next 1 after fdt_elapsed before fixing the delay and starting modulation. This ensures that the response can only happen
 				// at intervals of 8 * 16 = 128 adc_clk ticks intervals (as defined in ISO14443-3)
-				if(ssp_dout) temp_buffer_reset = 1'b1;							
+				if(ssp_dout) temp_buffer_reset = 1'b1;
 				if(mod_sig_ptr == 6'b000010) mod_sig_ptr <= 6'b001001;			// still nothing received, need to go for the next interval
 				else mod_sig_ptr <= mod_sig_ptr - 1;							// decrease buffer.
 			end
@@ -298,7 +298,7 @@ begin
 			end
 		end
 	end
-	
+
 	//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	// Communication to ARM (SSP Clock and data)
 	// SNIFFER mode (ssp_clk = adc_clk / 8, ssp_frame clock = adc_clk / 64)):
@@ -306,7 +306,7 @@ begin
 	begin
 		if(negedge_cnt[2:0] == 3'b100)
 			ssp_clk <= 1'b0;
-			
+
 		if(negedge_cnt[2:0] == 3'b000)
 		begin
 			ssp_clk <= 1'b1;
@@ -321,7 +321,7 @@ begin
 			ssp_frame = 1'b1;
 		else
 			ssp_frame = 1'b0;
-		
+
 		bit_to_arm = to_arm[7];
 	end
 	else
@@ -341,12 +341,12 @@ begin
 		begin
 			ssp_clk <= 1'b1;
 		end
-		
+
 		ssp_frame = (ssp_frame_counter == 3'd7);
-	
+
 		bit_to_arm = sendbit;
 	end
-	
+
 end
 
 assign ssp_din = bit_to_arm;
@@ -357,7 +357,7 @@ wire modulating_carrier;
 assign modulating_carrier = (mod_sig_coil & negedge_cnt[3] & (mod_type == 3'b010));					// in TAGSIM_MOD only. Otherwise always 0.
 
 // for READER_MOD only: drop carrier for mod_sig_coil==1 (pause), READER_LISTEN: carrier always on, others: carrier always off
-assign pwr_hi = (ck_1356megb & (((mod_type == 3'b100) & ~mod_sig_coil) || (mod_type == 3'b011)));	
+assign pwr_hi = (ck_1356megb & (((mod_type == 3'b100) & ~mod_sig_coil) || (mod_type == 3'b011)));
 
 
 // Enable HF antenna drivers:

@@ -31,9 +31,9 @@ module lo_edge_detect(
 reg [7:0] pck_divider;
 reg clk_state;
 
-wire tag_modulation; 
+wire tag_modulation;
 assign tag_modulation = ssp_dout & !lf_field;
-wire reader_modulation; 
+wire reader_modulation;
 assign reader_modulation = !ssp_dout & lf_field & clk_state;
 
 // No logic, straight through.

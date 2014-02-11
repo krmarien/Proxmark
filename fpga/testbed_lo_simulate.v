@@ -86,7 +86,7 @@ module testbed_lo_simulate;
 		end else begin
 			cross_lo = 0;
 		end
-			
+
 	end
 	endtask
 
