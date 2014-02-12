@@ -34,6 +34,8 @@ module fpga(
 	input cross_hi, cross_lo;
 	output dbg;
 
+reg ssp_clk;
+reg ssp_frame;
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
@@ -45,6 +47,18 @@ module fpga(
 reg [15:0] shift_reg;
 reg [7:0] divisor;
 reg [7:0] conf_word;
+
+reg bit_to_arm;
+reg [3:0] counter;
+reg [31:0] deadbeaf = 32'hDEADBEEF;
+/*
+reg [31:0] test_cmd;
+reg [2:0] counter;
+reg [4:0] test_cmd_counter;
+reg ssp_bit_toggle;
+reg [2:0] ssp_frame_counter;
+
+reg received;*/
 
 // We switch modes between transmitting to the 13.56 MHz tag and receiving
 // from it, which means that we must make sure that we can do so without
@@ -80,11 +94,78 @@ hi_iso14443a hisn(
 	pck0, ck_1356meg, ck_1356megb,
 	pwr_lo, pwr_hi, pwr_oe1, pwr_oe2, pwr_oe3, pwr_oe4,
 	adc_d, adc_clk,
-	ssp_frame, ssp_din, ssp_dout, ssp_clk,
+	hi_ssp_frame, hi_ssp_din, ssp_dout, hi_ssp_clk,
 	cross_hi, cross_lo,
 	dbg,
 	hi_simulate_mod_type
 );
+
+always @(posedge ck_1356meg)
+begin
+	// Do the relay test
+	/*if (hi_simulate_mod_type == 3'b101) begin
+		counter = counter + 1;
+		if (test_cmd_counter[4] != 1) begin
+			if (counter == 3'b0) begin
+				test_cmd_counter = test_cmd_counter + 1;
+				test_cmd = {test_cmd[30:0], ssp_dout};
+				/*if (ssp_dout == 1'b1) begin
+					ssp_clk = 1'b0;
+					ssp_frame = 1'b0;
+				end
+				/*if (test_cmd == 32'hDEADBEEF) begin
+					ssp_clk = 1'b0;
+					ssp_frame = 1'b0;
+					received = 1'b1;
+				end
+				else begin
+					ssp_clk = hi_ssp_clk;
+					ssp_frame = hi_ssp_frame;
+				end*/
+			/*end
+		end
+		else begin
+			ssp_clk = ~ssp_clk;
+
+			if (ssp_bit_toggle) begin
+				ssp_bit_toggle = 1'b0;
+				ssp_frame_counter = ssp_frame_counter + 1;
+				ssp_frame = (ssp_frame_counter == 3'b0);
+				bit_to_arm = test_cmd[31];
+				test_cmd = {test_cmd[30:0], 1'b0};
+			end
+			else begin
+				ssp_bit_toggle = 1'b1;
+			end
+		end
+	end
+	else begin
+		if (received == 1'b1) begin
+			test_cmd_counter = 5'b0;
+			ssp_frame_counter = 3'b0;
+			ssp_frame = hi_ssp_frame;
+			ssp_clk = hi_ssp_clk;
+			bit_to_arm = hi_ssp_din;
+		end
+	end*/
+
+	if (hi_simulate_mod_type == 3'b101) begin
+		counter <= counter + 1;
+		ssp_clk = ~ssp_clk;
+		ssp_frame = (counter[3:0] == 4'b0000);
+		if (counter[0] == 1'b0) begin
+			bit_to_arm = deadbeaf[31];
+			deadbeaf = {deadbeaf[30:0], deadbeaf[31]};
+		end
+	end
+	else begin
+		ssp_frame = hi_ssp_frame;
+		ssp_clk = hi_ssp_clk;
+		bit_to_arm = hi_ssp_din;
+	end
+end
+
+assign ssp_din = bit_to_arm;
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;

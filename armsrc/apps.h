@@ -106,6 +106,7 @@ void SetAdcMuxFor(uint32_t whichGpio);
 #define FPGA_HF_ISO14443A_TAGSIM_MOD				(2<<0)
 #define FPGA_HF_ISO14443A_READER_LISTEN				(3<<0)
 #define FPGA_HF_ISO14443A_READER_MOD				(4<<0)
+#define FPGA_HF_ISO14443A_RELAYTEST  				(5<<0)
 
 /// lfops.h
 void AcquireRawAdcSamples125k(int divisor);
@@ -140,6 +141,7 @@ void RAMFUNC SnoopIso14443(void);
 void SendRawCommand14443B(uint32_t, uint32_t, uint8_t, uint8_t[]);
 
 /// iso14443a.h
+void RAMFUNC RelayTestIso14443a(uint8_t param);
 void RAMFUNC SnoopIso14443a(uint8_t param);
 void SimulateIso14443aTag(int tagType, int uid_1st, int uid_2nd, byte_t* data);
 void ReaderIso14443a(UsbCommand * c);

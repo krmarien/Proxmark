@@ -766,6 +766,9 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_SNOOP_ISO_14443a:
 			SnoopIso14443a(c->arg[0]);
 			break;
+		case CMD_RELAYTEST_ISO_14443a:
+			RelayTestIso14443a(c->arg[0]);
+			break;
 		case CMD_READER_ISO_14443a:
 			ReaderIso14443a(c);
 			break;
@@ -966,11 +969,11 @@ void UsbPacketReceived(uint8_t *packet, int len)
 			uint32_t dev_info = DEVICE_INFO_FLAG_OSIMAGE_PRESENT | DEVICE_INFO_FLAG_CURRENT_MODE_OS;
 			if(common_area.flags.bootrom_present) dev_info |= DEVICE_INFO_FLAG_BOOTROM_PRESENT;
 //			UsbSendPacket((uint8_t*)&c, sizeof(c));
-			cmd_send(CMD_DEVICE_INFO,dev_info,0,0,0,0);	
+			cmd_send(CMD_DEVICE_INFO,dev_info,0,0,0,0);
 			break;
 		}
 		default:
-			Dbprintf("%s: 0x%04x","unknown command:",c->cmd);
+			Dbprintf("%s: 0x%04x","unknown command",c->cmd);
 			break;
 	}
 }

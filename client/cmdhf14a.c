@@ -609,15 +609,28 @@ static void waitCmd(uint8_t iSelect)
     }
 }
 
+int CmdHF14ARelayTest(const char *Cmd) {
+	if (param_getchar(Cmd, 0) == 'h') {
+		PrintAndLog("It tests the relay connection by sending data to the other proxmark.");
+		PrintAndLog("Usage:  hf 14a relaytest");
+		return 0;
+	}
+
+  UsbCommand c = {CMD_RELAYTEST_ISO_14443a, {0, 0, 0}};
+  SendCommand(&c);
+  return 0;
+}
+
 static command_t CommandTable[] = 
 {
-  {"help",   CmdHelp,              1, "This help"},
-  {"list",   CmdHF14AList,         0, "List ISO 14443a history"},
-  {"reader", CmdHF14AReader,       0, "Act like an ISO14443 Type A reader"},
-  {"cuids",  CmdHF14ACUIDs,        0, "<n> Collect n>0 ISO14443 Type A UIDs in one go"},
-  {"sim",    CmdHF14ASim,          0, "<UID> -- Fake ISO 14443a tag"},
-  {"snoop",  CmdHF14ASnoop,        0, "Eavesdrop ISO 14443 Type A"},
-  {"raw",    CmdHF14ACmdRaw,       0, "Send raw hex data to tag"},
+  {"help",       CmdHelp,              1, "This help"},
+  {"list",       CmdHF14AList,         0, "List ISO 14443a history"},
+  {"reader",     CmdHF14AReader,       0, "Act like an ISO14443 Type A reader"},
+  {"cuids",      CmdHF14ACUIDs,        0, "<n> Collect n>0 ISO14443 Type A UIDs in one go"},
+  {"sim",        CmdHF14ASim,          0, "<UID> -- Fake ISO 14443a tag"},
+  {"snoop",      CmdHF14ASnoop,        0, "Eavesdrop ISO 14443 Type A"},
+  {"raw",        CmdHF14ACmdRaw,       0, "Send raw hex data to tag"},
+  {"relaytest",  CmdHF14ARelayTest,    0, "Test the relay connection"},
   {NULL, NULL, 0, NULL}
 };
 
