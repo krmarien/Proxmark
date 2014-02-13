@@ -551,8 +551,8 @@ static RAMFUNC int ManchesterDecoding(int bit, uint16_t offset)
 // Tests relay connection
 //=============================================================================
 void RAMFUNC RelayTestIso14443a(uint8_t param) {
-	//uint8_t cmd[] = { 0xDE, 0xAD, 0xBE, 0xEF };
-	//int c = 0;
+	uint8_t cmd[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+	int c = 0;
 
 	LED_A_ON();
 	LED_B_ON();
@@ -560,60 +560,40 @@ void RAMFUNC RelayTestIso14443a(uint8_t param) {
 	LED_D_ON();
 	DbpString("Do relay test");
 
-	int8_t *dmaBuf = ((int8_t *)BigBuf) + DMA_BUFFER_OFFSET;
-	//int8_t *data = dmaBuf;
-
 	// Setup for the DMA.
 	FpgaSetupSsc();
-	FpgaSetupSscDma((uint8_t *)dmaBuf, DMA_BUFFER_SIZE);
 
-	FpgaWriteConfWord(FPGA_MAJOR_MODE_HF_ISO14443A | FPGA_HF_ISO14443A_RELAYTEST);
+	FpgaWriteConfWord(FPGA_MAJOR_MODE_HF_ISO14443A | FPGA_HF_ISO14443A_RELAYTEST_SEND);
 
-
-	//while(true) {
-		/*if(BUTTON_PRESS()) {
-			DbpString("cancelled by button");
-			goto done;
+	while(true) {
+		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
+			AT91C_BASE_SSC->SSC_THR = cmd[c];
+			Dbprintf("Send 0x%02x", cmd[c]);
+			c++;
+			if (c >= 4)
+				break;
 		}
 
-		if (c == 0) {
-			for(;;) {
-				if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
-					AT91C_BASE_SSC->SSC_THR = cmd[c];
-					Dbprintf("Send 0x%02x", cmd[c]);
-					c++;
-					if (c >= 4)
-						break;
-				}
-			}
-		}*/
-	//}
+		if(BUTTON_PRESS()) {
+			DbpString("Cancelled by button");
+			goto done;
+		}
+	}
 	LEDsoff();
 	LED_A_ON();
 
-	/*int dataLen = 0;
-	int register readBufDataP = data - dmaBuf;
-	int register dmaBufDataP = DMA_BUFFER_SIZE - AT91C_BASE_PDC_SSC->PDC_RCR;
-	if (readBufDataP <= dmaBufDataP){
-		dataLen = dmaBufDataP - readBufDataP;
-	} else {
-		dataLen = DMA_BUFFER_SIZE - readBufDataP + dmaBufDataP + 1;
-	}
+	FpgaWriteConfWord(FPGA_MAJOR_MODE_HF_ISO14443A | FPGA_HF_ISO14443A_RELAYTEST_RECEIVE);
 
-	Dbprintf("Received: %d", dataLen);
-	for(c = 0 ; c < dataLen ; c++) {
-		if (data[c] > 0)
-			Dbprintf("Received (%d): 0x%02x", c, data[c]);
-	}*/
 	while(true) {
-		if(BUTTON_PRESS()) {
-			DbpString("cancelled by button");
-			goto done;
+		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
+			c++;
+			if ((uint8_t)AT91C_BASE_SSC->SSC_RHR > 0)
+				Dbprintf("Received (%d): 0x%02x", c, (uint8_t)AT91C_BASE_SSC->SSC_RHR);
 		}
 
-		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
-			if ((uint8_t)AT91C_BASE_SSC->SSC_RHR > 0)
-				Dbprintf("Received: 0x%02x", (uint8_t)AT91C_BASE_SSC->SSC_RHR);
+		if(BUTTON_PRESS()) {
+			DbpString("Cancelled by button");
+			goto done;
 		}
 	}
 

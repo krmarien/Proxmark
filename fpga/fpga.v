@@ -48,17 +48,20 @@ reg [15:0] shift_reg;
 reg [7:0] divisor;
 reg [7:0] conf_word;
 
+reg [2:0] div_counter;
+reg clk;
+
 reg bit_to_arm;
 reg [3:0] counter;
+reg [3:0] receive_counter;
 reg [31:0] deadbeaf = 32'hDEADBEEF;
+reg [31:0] test_cmd;
 /*
 reg [31:0] test_cmd;
 reg [2:0] counter;
 reg [4:0] test_cmd_counter;
 reg ssp_bit_toggle;
-reg [2:0] ssp_frame_counter;
-
-reg received;*/
+reg [2:0] ssp_frame_counter;*/
 
 // We switch modes between transmitting to the 13.56 MHz tag and receiving
 // from it, which means that we must make sure that we can do so without
@@ -102,66 +105,43 @@ hi_iso14443a hisn(
 
 always @(posedge ck_1356meg)
 begin
-	// Do the relay test
-	/*if (hi_simulate_mod_type == 3'b101) begin
-		counter = counter + 1;
-		if (test_cmd_counter[4] != 1) begin
-			if (counter == 3'b0) begin
-				test_cmd_counter = test_cmd_counter + 1;
-				test_cmd = {test_cmd[30:0], ssp_dout};
-				/*if (ssp_dout == 1'b1) begin
-					ssp_clk = 1'b0;
-					ssp_frame = 1'b0;
-				end
-				/*if (test_cmd == 32'hDEADBEEF) begin
-					ssp_clk = 1'b0;
-					ssp_frame = 1'b0;
-					received = 1'b1;
-				end
-				else begin
-					ssp_clk = hi_ssp_clk;
-					ssp_frame = hi_ssp_frame;
-				end*/
-			/*end
-		end
-		else begin
-			ssp_clk = ~ssp_clk;
+	div_counter <= div_counter + 1;
+	clk = div_counter[2];
+end
 
-			if (ssp_bit_toggle) begin
-				ssp_bit_toggle = 1'b0;
-				ssp_frame_counter = ssp_frame_counter + 1;
-				ssp_frame = (ssp_frame_counter == 3'b0);
-				bit_to_arm = test_cmd[31];
-				test_cmd = {test_cmd[30:0], 1'b0};
-			end
-			else begin
-				ssp_bit_toggle = 1'b1;
-			end
-		end
-	end
-	else begin
-		if (received == 1'b1) begin
-			test_cmd_counter = 5'b0;
-			ssp_frame_counter = 3'b0;
-			ssp_frame = hi_ssp_frame;
-			ssp_clk = hi_ssp_clk;
-			bit_to_arm = hi_ssp_din;
-		end
-	end*/
-
+always @(posedge clk)
+begin
 	if (hi_simulate_mod_type == 3'b101) begin
+		receive_counter <= receive_counter + 1;
+		ssp_clk <= hi_ssp_clk;
+		ssp_frame = hi_ssp_frame;
+
+		if (receive_counter[0] == 1'b0) begin
+			test_cmd = {test_cmd[30:0], ssp_dout};
+		end
+
+		if (test_cmd[7:0] == 8'b10101101) begin
+			deadbeaf = 32'hFFFFFFFF;
+		end
+
+		counter <= 4'b0;
+	end
+	else if (hi_simulate_mod_type == 3'b110) begin
 		counter <= counter + 1;
-		ssp_clk = ~ssp_clk;
-		ssp_frame = (counter[3:0] == 4'b0000);
+		ssp_clk <= ~ssp_clk;
+		ssp_frame = (counter[3:2] == 2'b00);
 		if (counter[0] == 1'b0) begin
-			bit_to_arm = deadbeaf[31];
+			bit_to_arm <= deadbeaf[31];
 			deadbeaf = {deadbeaf[30:0], deadbeaf[31]};
 		end
+
+		receive_counter <= 4'b0;
 	end
 	else begin
+		deadbeaf = 32'hDEADBEEF;
 		ssp_frame = hi_ssp_frame;
-		ssp_clk = hi_ssp_clk;
-		bit_to_arm = hi_ssp_din;
+		ssp_clk <= hi_ssp_clk;
+		bit_to_arm <= hi_ssp_din;
 	end
 end
 
