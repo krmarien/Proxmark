@@ -52,16 +52,10 @@ reg [2:0] div_counter;
 reg clk;
 
 reg bit_to_arm;
-reg [3:0] counter;
-reg [3:0] receive_counter;
+reg [17:0] counter;
+reg [0:0] receive_counter;
 reg [31:0] deadbeaf = 32'hDEADBEEF;
 reg [31:0] test_cmd;
-/*
-reg [31:0] test_cmd;
-reg [2:0] counter;
-reg [4:0] test_cmd_counter;
-reg ssp_bit_toggle;
-reg [2:0] ssp_frame_counter;*/
 
 // We switch modes between transmitting to the 13.56 MHz tag and receiving
 // from it, which means that we must make sure that we can do so without
@@ -120,19 +114,21 @@ begin
 			test_cmd = {test_cmd[30:0], ssp_dout};
 		end
 
-		if (test_cmd[7:0] == 8'b10101101) begin
+		/*if (test_cmd[7:0] == 8'hEF) begin
 			deadbeaf = 32'hFFFFFFFF;
-		end
+		end*/
 
 		counter <= 4'b0;
 	end
 	else if (hi_simulate_mod_type == 3'b110) begin
 		counter <= counter + 1;
-		ssp_clk <= ~ssp_clk;
-		ssp_frame = (counter[3:2] == 2'b00);
-		if (counter[0] == 1'b0) begin
-			bit_to_arm <= deadbeaf[31];
-			deadbeaf = {deadbeaf[30:0], deadbeaf[31]};
+		if (counter[17:4] == 7'b0) begin
+			ssp_clk <= ~ssp_clk;
+			ssp_frame = (counter[3:2] == 2'b00);
+			if (counter[0] == 1'b0) begin
+				bit_to_arm <= deadbeaf[31];
+				deadbeaf = {deadbeaf[30:0], deadbeaf[31]};
+			end
 		end
 
 		receive_counter <= 4'b0;
