@@ -52,7 +52,7 @@ reg [2:0] div_counter;
 reg clk;
 
 reg bit_to_arm;
-reg [17:0] counter;
+reg [14:0] counter;
 reg [0:0] receive_counter;
 reg [31:0] deadbeaf = 32'hDEADBEEF;
 reg [31:0] test_cmd;
@@ -122,7 +122,7 @@ begin
 	end
 	else if (hi_simulate_mod_type == 3'b110) begin
 		counter <= counter + 1;
-		if (counter[17:4] == 7'b0) begin
+		if (counter[14:4] == 7'b0) begin
 			ssp_clk <= ~ssp_clk;
 			ssp_frame = (counter[3:2] == 2'b00);
 			if (counter[0] == 1'b0) begin
