@@ -551,7 +551,7 @@ static RAMFUNC int ManchesterDecoding(int bit, uint16_t offset)
 // Tests relay connection
 //=============================================================================
 void RAMFUNC RelayTestIso14443a(uint8_t param) {
-	uint8_t cmd[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+	uint8_t cmd[] = { 0xFD, 0xFE, 0xFA, 0xFD, 0xFB, 0xFE, 0xFE, 0xFF };
 	int c = 0;
 
 	LED_A_ON();
@@ -570,7 +570,7 @@ void RAMFUNC RelayTestIso14443a(uint8_t param) {
 			AT91C_BASE_SSC->SSC_THR = cmd[c];
 			Dbprintf("Send 0x%02x", cmd[c]);
 			c++;
-			if (c >= 4)
+			if (c >= 8)
 				break;
 		}
 

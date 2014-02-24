@@ -55,7 +55,9 @@ reg bit_to_arm;
 reg [14:0] counter;
 reg [0:0] receive_counter;
 reg [31:0] deadbeaf = 32'hDEADBEEF;
-reg [31:0] test_cmd;
+reg [63:0] test_cmd;
+
+reg [7:0] receive_buffer;
 
 // We switch modes between transmitting to the 13.56 MHz tag and receiving
 // from it, which means that we must make sure that we can do so without
@@ -105,28 +107,34 @@ end
 
 always @(posedge clk)
 begin
-	if (hi_simulate_mod_type == 3'b101) begin
+	if (hi_simulate_mod_type == 3'b101) begin // Receive data from ARM
 		receive_counter <= receive_counter + 1;
 		ssp_clk <= hi_ssp_clk;
 		ssp_frame = hi_ssp_frame;
 
 		if (receive_counter[0] == 1'b0) begin
-			test_cmd = {test_cmd[30:0], ssp_dout};
+			receive_buffer = {receive_buffer[6:0], ssp_dout};
+
+			if (receive_buffer[7:4] == 4'b1111) begin
+				test_cmd = {test_cmd[55:0], receive_buffer};
+				receive_buffer = 8'b0;
+			end
 		end
 
-		/*if (test_cmd[7:0] == 8'hEF) begin
+		/*if (receive_buffer[7:0] == 8'hEF) begin
 			deadbeaf = 32'hFFFFFFFF;
 		end*/
 
 		counter <= 4'b0;
 	end
-	else if (hi_simulate_mod_type == 3'b110) begin
+	else if (hi_simulate_mod_type == 3'b110) begin // Send data to ARM
 		counter <= counter + 1;
 		if (counter[14:4] == 7'b0) begin
 			ssp_clk <= ~ssp_clk;
 			ssp_frame = (counter[3:2] == 2'b00);
 			if (counter[0] == 1'b0) begin
-				bit_to_arm <= deadbeaf[31];
+				bit_to_arm <= test_cmd[63];
+				test_cmd = {test_cmd[62:0], test_cmd[63]};
 				deadbeaf = {deadbeaf[30:0], deadbeaf[31]};
 			end
 		end
