@@ -784,6 +784,12 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_EPA_PACE_COLLECT_NONCE:
 			EPA_PACE_Collect_Nonce(c);
 			break;
+		case CMD_RELAY_READER_ISO_14443a:
+			RelayReaderIso14443a();
+			break;
+		case CMD_RELAY_TAG_ISO_14443a:
+			RelayTagIso14443a();
+			break;
 
 		case CMD_READER_MIFARE:
             ReaderMifare(c->arg[0]);

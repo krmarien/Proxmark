@@ -629,6 +629,28 @@ static void waitCmd(uint8_t iSelect)
     }
 }
 
+
+
+int CmdHF14ACmdRelay(const char *Cmd) {
+    UsbCommand c;
+
+    if (param_getchar(Cmd, 0) == 'r') {
+    	c.cmd = CMD_RELAY_READER_ISO_14443a;
+    } else if (param_getchar(Cmd, 0) == 't') {
+    	c.cmd = CMD_RELAY_TAG_ISO_14443a;
+    } else {
+		PrintAndLog("Proxmark in Relay modus");
+		PrintAndLog("Usage:  hf 14a relay [r][t]");
+		PrintAndLog("r - fake reader");
+		PrintAndLog("t - fake tag");
+		PrintAndLog("sample: hf 14a relay r");
+		return 0;
+    }
+
+    SendCommand(&c);
+    return 0;
+}
+
 static command_t CommandTable[] = 
 {
   {"help",   CmdHelp,              1, "This help"},
@@ -638,6 +660,7 @@ static command_t CommandTable[] =
   {"sim",    CmdHF14ASim,          0, "<UID> -- Fake ISO 14443a tag"},
   {"snoop",  CmdHF14ASnoop,        0, "Eavesdrop ISO 14443 Type A"},
   {"raw",    CmdHF14ACmdRaw,       0, "Send raw hex data to tag"},
+  {"relay",  CmdHF14ACmdRelay,     0, "Relay mode"},
   {NULL, NULL, 0, NULL}
 };
 

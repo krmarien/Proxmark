@@ -107,6 +107,8 @@ void SetAdcMuxFor(uint32_t whichGpio);
 #define FPGA_HF_ISO14443A_TAGSIM_MOD				(2<<0)
 #define FPGA_HF_ISO14443A_READER_LISTEN				(3<<0)
 #define FPGA_HF_ISO14443A_READER_MOD				(4<<0)
+#define FPGA_HF_ISO14443A_RELAY_READER				(5<<0)
+#define FPGA_HF_ISO14443A_RELAY_TAG					(6<<0)
 
 // Options for Relay
 #define FPGA_HF_RELAY_SEND							(0<<0)
@@ -154,6 +156,8 @@ void RAMFUNC RelayDelayIso14443a(uint8_t param);
 void RAMFUNC SnoopIso14443a(uint8_t param);
 void SimulateIso14443aTag(int tagType, int uid_1st, int uid_2nd, byte_t* data);
 void ReaderIso14443a(UsbCommand * c);
+void RelayReaderIso14443a(void);
+void RelayTagIso14443a(void);
 
 // Also used in iclass.c
 bool RAMFUNC LogTrace(const uint8_t * btBytes, uint8_t iLen, uint32_t iSamples, uint32_t dwParity, bool bReader);

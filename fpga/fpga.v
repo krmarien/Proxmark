@@ -16,6 +16,14 @@
 `include "relay.v"
 `include "util.v"
 
+`define SNIFFER			3'b000
+`define TAGSIM_LISTEN	3'b001
+`define TAGSIM_MOD		3'b010
+`define READER_LISTEN	3'b011
+`define READER_MOD		3'b100
+`define FAKE_READER		3'b101
+`define FAKE_TAG		3'b110
+
 module fpga(
 	spck, miso, mosi, ncs,
 	pck0, ck_1356meg, ck_1356megb,
@@ -74,6 +82,8 @@ assign major_mode = conf_word[5];
 // For the high-frequency simulated tag: what kind of modulation to use.
 wire [2:0] hi_simulate_mod_type;
 assign hi_simulate_mod_type = conf_word[2:0];
+reg [2:0] relay_mod_type;
+wire [2:0] mod_type;
 
 //-----------------------------------------------------------------------------
 // And then we instantiate the modules corresponding to each of the FPGA's
@@ -83,12 +93,12 @@ assign hi_simulate_mod_type = conf_word[2:0];
 
 hi_iso14443a hisn(
 	pck0, ck_1356meg, ck_1356megb,
-	hisn_pwr_lo, hisn_pwr_hi, hisn_pwr_oe1, hisn_pwr_oe2, hisn_pwr_oe3,	hisn_pwr_oe4,
+	, hisn_pwr_hi, hisn_pwr_oe1, hisn_pwr_oe2, hisn_pwr_oe3,	hisn_pwr_oe4,
 	adc_d, hisn_adc_clk,
-	hisn_ssp_frame, hisn_ssp_din, ssp_dout, hisn_ssp_clk,
+	hisn_ssp_frame, hisn_ssp_din, hisn_ssp_dout, hisn_ssp_clk,
 	cross_hi, cross_lo,
 	,
-	hi_simulate_mod_type
+	mod_type
 );
 
 relay rl(
@@ -107,9 +117,43 @@ mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   1'b0);
 mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   1'b0);
 mux2 mux_pwr_oe3		(major_mode, pwr_oe3,   hisn_pwr_oe3,   1'b0);
 mux2 mux_pwr_oe4		(major_mode, pwr_oe4,   hisn_pwr_oe4,   1'b0);
-mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_pwr_lo,    rl_data_out);
+mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_ssp_din,    rl_data_out);
 mux2 mux_pwr_hi			(major_mode, pwr_hi,    hisn_pwr_hi,    1'b0);
 mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   rl_adc_clk);
+
+
+reg [2:0] div_counter;
+reg clk;
+reg buf_dbg;
+
+reg [15:0] receive_buffer;
+
+always @(posedge ck_1356meg)
+begin
+	div_counter <= div_counter + 1;
+	clk = div_counter[2]; // 1,695MHz
+	buf_dbg = dbg;
+end
+
+always @(posedge clk)
+begin
+	if (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)
+	begin
+		receive_buffer = {receive_buffer[15:0], buf_dbg};
+
+		if (hi_simulate_mod_type == `FAKE_READER) begin // Fake Reader
+			if (| receive_buffer == 1'b1 || buf_dbg == 1'b1) relay_mod_type = `TAGSIM_MOD;
+			else relay_mod_type = `TAGSIM_LISTEN;
+		end
+		else if (hi_simulate_mod_type == `FAKE_TAG) begin // Fake Tag
+			if (| receive_buffer == 1'b1 || buf_dbg == 1'b1) relay_mod_type = `READER_MOD;
+			else relay_mod_type = `READER_LISTEN;
+		end
+	end
+end
+
+assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
+assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? buf_dbg : ssp_dout;
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;

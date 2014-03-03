@@ -2776,3 +2776,221 @@ void RAMFUNC SniffMifare(uint8_t param) {
 	Dbprintf("maxDataLen=%x, Uart.state=%x, Uart.len=%x", maxDataLen, Uart.state, Uart.len);
 	LEDsoff();
 }
+
+
+void RelayTagIso14443a(void) {
+	DbpString("Fake Tag");
+
+	LEDsoff();
+	// init trace buffer
+	iso14a_clear_trace();
+
+	bool triggered = FALSE; 
+	
+	// The command (reader -> tag) that we're receiving.
+	// The length of a received command will in most cases be no more than 18 bytes.
+	// So 32 should be enough!
+	uint8_t *receivedCmd = (((uint8_t *)BigBuf) + RECV_CMD_OFFSET);
+
+	// As we receive stuff, we copy it from receivedCmd or receivedResponse
+	// into trace, along with its length and other annotations.
+	//uint8_t *trace = (uint8_t *)BigBuf;
+	
+	// The DMA buffer, used to stream samples from the FPGA
+	uint8_t *dmaBuf = ((uint8_t *)BigBuf) + DMA_BUFFER_OFFSET;
+	uint8_t *data = dmaBuf;
+	uint8_t previous_data = 0;
+	int maxDataLen = 0;
+	int dataLen = 0;
+	
+	iso14443a_setup(FPGA_HF_ISO14443A_SNIFFER);
+
+	// Set up the demodulator for the reader -> tag commands
+	Uart.output = receivedCmd;
+
+	// Setup and start DMA.
+	FpgaSetupSscDma((uint8_t *)dmaBuf, DMA_BUFFER_SIZE);
+	
+	// And now we loop, receiving samples.
+	for(uint32_t rsamples = 0; TRUE; ) {
+		if(BUTTON_PRESS()) {
+			DbpString("cancelled by button");
+			break;
+		}
+
+		LED_A_ON();
+		WDT_HIT();
+
+		int register readBufDataP = data - dmaBuf;
+		int register dmaBufDataP = DMA_BUFFER_SIZE - AT91C_BASE_PDC_SSC->PDC_RCR;
+		if (readBufDataP <= dmaBufDataP){
+			dataLen = dmaBufDataP - readBufDataP;
+		} else {
+			dataLen = DMA_BUFFER_SIZE - readBufDataP + dmaBufDataP;
+		}
+		// test for length of buffer
+		if(dataLen > maxDataLen) {
+			maxDataLen = dataLen;
+			if(dataLen > 400) {
+				Dbprintf("blew circular buffer! dataLen=%d", dataLen);
+				break;
+			}
+		}
+		if(dataLen < 1) continue;
+
+		// primary buffer was stopped( <-- we lost data!
+		if (!AT91C_BASE_PDC_SSC->PDC_RCR) {
+			AT91C_BASE_PDC_SSC->PDC_RPR = (uint32_t) dmaBuf;
+			AT91C_BASE_PDC_SSC->PDC_RCR = DMA_BUFFER_SIZE;
+			Dbprintf("RxEmpty ERROR!!! data length:%d", dataLen); // temporary
+		}
+		// secondary buffer sets as primary, secondary buffer was stopped
+		if (!AT91C_BASE_PDC_SSC->PDC_RNCR) {
+			AT91C_BASE_PDC_SSC->PDC_RNPR = (uint32_t) dmaBuf;
+			AT91C_BASE_PDC_SSC->PDC_RNCR = DMA_BUFFER_SIZE;
+		}
+
+		LED_A_OFF();
+		
+		if (rsamples & 0x01) {	
+			uint8_t readerdata = (previous_data & 0xF0) | (*data >> 4);
+			if (MillerDecoding(readerdata, (rsamples-1)*4)) {
+				LED_C_ON();
+
+				// check - if there is a short 7bit request from reader
+				if ((!triggered) && (Uart.len == 1) && (Uart.bitCount == 7)) triggered = TRUE;
+
+				if(triggered) {
+					if (!LogTrace(receivedCmd, Uart.len, Uart.startTime*16 - DELAY_READER_AIR2ARM_AS_SNIFFER, Uart.parityBits, TRUE)) break;
+					if (!LogTrace(NULL, 0, Uart.endTime*16 - DELAY_READER_AIR2ARM_AS_SNIFFER, 0, TRUE)) break;
+				}
+				/* And ready to receive another command. */
+				UartReset();
+				LED_B_OFF();
+			}
+		}
+
+		previous_data = *data;
+		rsamples++;
+		data++;
+		if(data > dmaBuf + DMA_BUFFER_SIZE) {
+			data = dmaBuf;
+		}
+	} // main cycle
+
+	DbpString("COMMAND FINISHED");
+
+	FpgaDisableSscDma();
+	Dbprintf("maxDataLen=%d, Uart.state=%x, Uart.len=%d", maxDataLen, Uart.state, Uart.len);
+	Dbprintf("traceLen=%d, Uart.output[0]=%08x", traceLen, (uint32_t)Uart.output[0]);
+	LEDsoff();
+}
+
+void RelayReaderIso14443a(void) {
+	DbpString("Fake Reader");
+
+	LEDsoff();
+	// init trace buffer
+	iso14a_clear_trace();
+
+	// We won't start recording the frames that we acquire until we trigger;
+	// a good trigger condition to get started is probably when we see a
+	// response from the tag.
+	// triggered == FALSE -- to wait first for card
+	bool triggered = FALSE; 
+	
+	// The response (tag -> reader) that we're receiving.
+	uint8_t *receivedResponse = (((uint8_t *)BigBuf) + RECV_RES_OFFSET);
+
+	// As we receive stuff, we copy it from receivedCmd or receivedResponse
+	// into trace, along with its length and other annotations.
+	//uint8_t *trace = (uint8_t *)BigBuf;
+	
+	// The DMA buffer, used to stream samples from the FPGA
+	uint8_t *dmaBuf = ((uint8_t *)BigBuf) + DMA_BUFFER_OFFSET;
+	uint8_t *data = dmaBuf;
+	uint8_t previous_data = 0;
+	int maxDataLen = 0;
+	int dataLen = 0;
+	
+	iso14443a_setup(FPGA_HF_ISO14443A_SNIFFER);
+
+	// Set up the demodulator for tag -> reader responses.
+	Demod.output = receivedResponse;
+
+	// Setup and start DMA.
+	FpgaSetupSscDma((uint8_t *)dmaBuf, DMA_BUFFER_SIZE);
+	
+	// And now we loop, receiving samples.
+	for(uint32_t rsamples = 0; TRUE; ) {
+
+		if(BUTTON_PRESS()) {
+			DbpString("cancelled by button");
+			break;
+		}
+
+		LED_A_ON();
+		WDT_HIT();
+
+		int register readBufDataP = data - dmaBuf;
+		int register dmaBufDataP = DMA_BUFFER_SIZE - AT91C_BASE_PDC_SSC->PDC_RCR;
+		if (readBufDataP <= dmaBufDataP){
+			dataLen = dmaBufDataP - readBufDataP;
+		} else {
+			dataLen = DMA_BUFFER_SIZE - readBufDataP + dmaBufDataP;
+		}
+		// test for length of buffer
+		if(dataLen > maxDataLen) {
+			maxDataLen = dataLen;
+			if(dataLen > 400) {
+				Dbprintf("blew circular buffer! dataLen=%d", dataLen);
+				break;
+			}
+		}
+		if(dataLen < 1) continue;
+
+		// primary buffer was stopped( <-- we lost data!
+		if (!AT91C_BASE_PDC_SSC->PDC_RCR) {
+			AT91C_BASE_PDC_SSC->PDC_RPR = (uint32_t) dmaBuf;
+			AT91C_BASE_PDC_SSC->PDC_RCR = DMA_BUFFER_SIZE;
+			Dbprintf("RxEmpty ERROR!!! data length:%d", dataLen); // temporary
+		}
+		// secondary buffer sets as primary, secondary buffer was stopped
+		if (!AT91C_BASE_PDC_SSC->PDC_RNCR) {
+			AT91C_BASE_PDC_SSC->PDC_RNPR = (uint32_t) dmaBuf;
+			AT91C_BASE_PDC_SSC->PDC_RNCR = DMA_BUFFER_SIZE;
+		}
+
+		LED_A_OFF();
+		
+		if (rsamples & 0x01) {
+			uint8_t tagdata = (previous_data << 4) | (*data & 0x0F);
+			if(ManchesterDecoding(tagdata, 0, (rsamples-1)*4)) {
+				LED_B_ON();
+
+				if (!LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, Demod.parityBits, FALSE)) break;
+				if (!LogTrace(NULL, 0, Demod.endTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, 0, FALSE)) break;
+
+				if ((!triggered)) triggered = TRUE;
+
+				// And ready to receive another response.
+				DemodReset();
+				LED_C_OFF();
+			}
+		}
+
+		previous_data = *data;
+		rsamples++;
+		data++;
+		if(data > dmaBuf + DMA_BUFFER_SIZE) {
+			data = dmaBuf;
+		}
+	} // main cycle
+
+	DbpString("COMMAND FINISHED");
+
+	FpgaDisableSscDma();
+	Dbprintf("maxDataLen=%d, Uart.state=%x, Uart.len=%d", maxDataLen, Uart.state, Uart.len);
+	Dbprintf("traceLen=%d, Uart.output[0]=%08x", traceLen, (uint32_t)Uart.output[0]);
+	LEDsoff();
+}
