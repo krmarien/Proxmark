@@ -22,6 +22,7 @@
 #include "cmddata.h"
 #include "cmdhw.h"
 #include "cmdlf.h"
+#include "cmdrelay.h"
 #include "cmdmain.h"
 #include "util.h"
 #include "cmdscript.h"
@@ -51,6 +52,7 @@ static command_t CommandTable[] =
   {"hf",    CmdHF,    1, "{ HF commands... }"},
   {"hw",    CmdHW,    1, "{ Hardware commands... }"},
   {"lf",    CmdLF,    1, "{ LF commands... }"},
+  {"relay", CmdRelay, 1, "{ Relay commands... }"},
   {"quit",  CmdQuit,  1, "Quit program"},
   {"script", CmdScript,   1,"Run script"},
   {NULL, NULL, 0, NULL}

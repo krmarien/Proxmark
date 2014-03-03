@@ -13,6 +13,8 @@
 //-----------------------------------------------------------------------------
 
 `include "hi_iso14443a.v"
+`include "relay.v"
+`include "util.v"
 
 module fpga(
 	spck, miso, mosi, ncs,
@@ -32,7 +34,7 @@ module fpga(
 	input ssp_dout;
 	output ssp_frame, ssp_din, ssp_clk;
 	input cross_hi, cross_lo;
-	output dbg;
+	input dbg;
 
 
 //-----------------------------------------------------------------------------
@@ -66,6 +68,9 @@ begin
 	end
 end
 
+wire major_mode;
+assign major_mode = conf_word[5];
+
 // For the high-frequency simulated tag: what kind of modulation to use.
 wire [2:0] hi_simulate_mod_type;
 assign hi_simulate_mod_type = conf_word[2:0];
@@ -78,13 +83,33 @@ assign hi_simulate_mod_type = conf_word[2:0];
 
 hi_iso14443a hisn(
 	pck0, ck_1356meg, ck_1356megb,
-	pwr_lo, pwr_hi, pwr_oe1, pwr_oe2, pwr_oe3, pwr_oe4,
-	adc_d, adc_clk,
-	ssp_frame, ssp_din, ssp_dout, ssp_clk,
+	hisn_pwr_lo, hisn_pwr_hi, hisn_pwr_oe1, hisn_pwr_oe2, hisn_pwr_oe3,	hisn_pwr_oe4,
+	adc_d, hisn_adc_clk,
+	hisn_ssp_frame, hisn_ssp_din, ssp_dout, hisn_ssp_clk,
 	cross_hi, cross_lo,
-	dbg,
+	,
 	hi_simulate_mod_type
 );
+
+relay rl(
+	pck0, ck_1356meg, ck_1356megb,
+	adc_d, rl_adc_clk,
+	rl_ssp_frame, rl_ssp_din, ssp_dout, rl_ssp_clk, hisn_ssp_clk, hisn_ssp_frame,
+	cross_hi, cross_lo,
+	dbg, rl_data_out,
+	hi_simulate_mod_type
+);
+
+mux2 mux_ssp_clk		(major_mode, ssp_clk,   hisn_ssp_clk,   rl_ssp_clk);
+mux2 mux_ssp_din		(major_mode, ssp_din,   hisn_ssp_din,   rl_ssp_din);
+mux2 mux_ssp_frame		(major_mode, ssp_frame, hisn_ssp_frame, rl_ssp_frame);
+mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   1'b0);
+mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   1'b0);
+mux2 mux_pwr_oe3		(major_mode, pwr_oe3,   hisn_pwr_oe3,   1'b0);
+mux2 mux_pwr_oe4		(major_mode, pwr_oe4,   hisn_pwr_oe4,   1'b0);
+mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_pwr_lo,    rl_data_out);
+mux2 mux_pwr_hi			(major_mode, pwr_hi,    hisn_pwr_hi,    1'b0);
+mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   rl_adc_clk);
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;

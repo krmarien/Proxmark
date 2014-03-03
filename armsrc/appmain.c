@@ -761,6 +761,15 @@ void UsbPacketReceived(uint8_t *packet, int len)
 			SendRawCommand14443B(c->arg[0],c->arg[1],c->arg[2],c->d.asBytes);
 			break;
 #endif
+		case CMD_RELAY_MASTER:
+			RelayMasterIso14443a(c->arg[0]);
+			break;
+		case CMD_RELAY_SLAVE:
+			RelaySlaveIso14443a(c->arg[0]);
+			break;
+		case CMD_RELAY_DELAY:
+			RelayDelayIso14443a(c->arg[0]);
+			break;
 
 #ifdef WITH_ISO14443a
 		case CMD_SNOOP_ISO_14443a:
@@ -775,7 +784,7 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_EPA_PACE_COLLECT_NONCE:
 			EPA_PACE_Collect_Nonce(c);
 			break;
-			
+
 		case CMD_READER_MIFARE:
             ReaderMifare(c->arg[0]);
 			break;

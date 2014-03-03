@@ -79,6 +79,7 @@ CMDSRCS = 	nonce2key/crapto1.c\
 			cmdlfhitag.c \
 			cmdlfti.c \
 			cmdparser.c \
+			cmdrelay.c \
 			cmdmain.c \
 			cmdlft55xx.c \
 			cmdlfpcf7931.c\

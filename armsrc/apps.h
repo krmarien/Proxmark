@@ -88,6 +88,7 @@ void SetAdcMuxFor(uint32_t whichGpio);
 #define FPGA_MAJOR_MODE_HF_ISO14443A				(5<<5)
 #define FPGA_MAJOR_MODE_LF_PASSTHRU					(6<<5)
 #define FPGA_MAJOR_MODE_OFF							(7<<5)
+#define FPGA_MAJOR_MODE_RELAY 						(0<<5)
 // Options for LF_EDGE_DETECT
 #define FPGA_LF_EDGE_DETECT_READER_FIELD 			(1<<0)
 // Options for the HF reader, tx to tag
@@ -106,6 +107,11 @@ void SetAdcMuxFor(uint32_t whichGpio);
 #define FPGA_HF_ISO14443A_TAGSIM_MOD				(2<<0)
 #define FPGA_HF_ISO14443A_READER_LISTEN				(3<<0)
 #define FPGA_HF_ISO14443A_READER_MOD				(4<<0)
+
+// Options for Relay
+#define FPGA_HF_RELAY_SEND							(0<<0)
+#define FPGA_HF_RELAY_RECEIVE						(1<<0)
+#define FPGA_HF_RELAY_DELAY							(2<<0)
 
 /// lfops.h
 void AcquireRawAdcSamples125k(int divisor);
@@ -139,10 +145,16 @@ void ReadSTMemoryIso14443(uint32_t);
 void RAMFUNC SnoopIso14443(void);
 void SendRawCommand14443B(uint32_t, uint32_t, uint8_t, uint8_t[]);
 
+/// relay.h
+void RAMFUNC RelayMasterIso14443a(uint8_t param);
+void RAMFUNC RelaySlaveIso14443a(uint8_t param);
+void RAMFUNC RelayDelayIso14443a(uint8_t param);
+
 /// iso14443a.h
 void RAMFUNC SnoopIso14443a(uint8_t param);
 void SimulateIso14443aTag(int tagType, int uid_1st, int uid_2nd, byte_t* data);
 void ReaderIso14443a(UsbCommand * c);
+
 // Also used in iclass.c
 bool RAMFUNC LogTrace(const uint8_t * btBytes, uint8_t iLen, uint32_t iSamples, uint32_t dwParity, bool bReader);
 uint32_t GetParity(const uint8_t * pbtCmd, int iLen);
