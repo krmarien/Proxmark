@@ -103,9 +103,7 @@ hi_iso14443a hisn(
 
 relay rl(
 	pck0, ck_1356meg, ck_1356megb,
-	adc_d, rl_adc_clk,
-	rl_ssp_frame, rl_ssp_din, ssp_dout, rl_ssp_clk, hisn_ssp_clk, hisn_ssp_frame,
-	cross_hi, cross_lo,
+	rl_ssp_frame, rl_ssp_din, ssp_dout, rl_ssp_clk,
 	dbg, rl_data_out,
 	hi_simulate_mod_type
 );
@@ -117,13 +115,12 @@ mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   1'b0);
 mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   1'b0);
 mux2 mux_pwr_oe3		(major_mode, pwr_oe3,   hisn_pwr_oe3,   1'b0);
 mux2 mux_pwr_oe4		(major_mode, pwr_oe4,   hisn_pwr_oe4,   1'b0);
-mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_ssp_din,    rl_data_out);
+mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_ssp_din,   rl_data_out);
 mux2 mux_pwr_hi			(major_mode, pwr_hi,    hisn_pwr_hi,    1'b0);
-mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   rl_adc_clk);
+mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   1'b0);
 
 
 reg [2:0] div_counter;
-reg clk;
 reg buf_dbg;
 
 reg [15:0] receive_buffer;
@@ -131,13 +128,10 @@ reg [15:0] receive_buffer;
 always @(posedge ck_1356meg)
 begin
 	div_counter <= div_counter + 1;
-	clk = div_counter[2]; // 1,695MHz
 	buf_dbg = dbg;
-end
 
-always @(posedge clk)
-begin
-	if (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)
+	// div_counter[2:0] == 3'b100 => 1.695MHz
+	if (div_counter[2:0] == 3'b100 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 	begin
 		receive_buffer = {receive_buffer[15:0], buf_dbg};
 
