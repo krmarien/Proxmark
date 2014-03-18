@@ -21,10 +21,10 @@ module relay(
     output data_out;
     input [2:0] mod_type;
 
-reg ssp_clk;
-reg ssp_frame;
-reg data_out;
-reg ssp_din;
+reg ssp_clk = 1'b0;
+reg ssp_frame = 1'b0;
+reg data_out = 1'b0;
+reg ssp_din = 1'b0;
 
 
 reg [6:0] div_counter = 7'b0;

@@ -2803,7 +2803,7 @@ void RelayTagIso14443a(void) {
 	int maxDataLen = 0;
 	int dataLen = 0;
 
-	iso14443a_setup(FPGA_HF_ISO14443A_SNIFFER);
+	iso14443a_setup(FPGA_HF_ISO14443A_RELAY_TAG);
 
 	// Set up the demodulator for the reader -> tag commands
 	Uart.output = receivedCmd;
@@ -2913,7 +2913,7 @@ void RelayReaderIso14443a(void) {
 	int maxDataLen = 0;
 	int dataLen = 0;
 
-	iso14443a_setup(FPGA_HF_ISO14443A_SNIFFER);
+	iso14443a_setup(FPGA_HF_ISO14443A_RELAY_READER);
 
 	// Set up the demodulator for tag -> reader responses.
 	Demod.output = receivedResponse;

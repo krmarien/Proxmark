@@ -59,9 +59,9 @@ module fpga(
 // to the configuration bits, for use below.
 //-----------------------------------------------------------------------------
 
-reg [15:0] shift_reg;
-reg [7:0] divisor;
-reg [7:0] conf_word;
+reg [15:0] shift_reg = 16'b0;
+reg [7:0] divisor = 8'b0;
+reg [7:0] conf_word = 8'b0;
 
 // We switch modes between transmitting to the 13.56 MHz tag and receiving
 // from it, which means that we must make sure that we can do so without
@@ -89,7 +89,7 @@ assign major_mode = conf_word[5];
 // For the high-frequency simulated tag: what kind of modulation to use.
 wire [2:0] hi_simulate_mod_type;
 assign hi_simulate_mod_type = conf_word[2:0];
-reg [2:0] relay_mod_type;
+reg [2:0] relay_mod_type = 3'b0;
 wire [2:0] mod_type;
 
 //-----------------------------------------------------------------------------
@@ -115,23 +115,23 @@ relay rl(
 	hi_simulate_mod_type
 );
 
-mux2 mux_ssp_clk		(major_mode, ssp_clk,   hisn_ssp_clk,   rl_ssp_clk);
-mux2 mux_ssp_din		(major_mode, ssp_din,   hisn_ssp_din,   rl_ssp_din);
-mux2 mux_ssp_frame		(major_mode, ssp_frame, hisn_ssp_frame, rl_ssp_frame);
-mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   1'b0);
-mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   1'b0);
-mux2 mux_pwr_oe3		(major_mode, pwr_oe3,   hisn_pwr_oe3,   1'b0);
-mux2 mux_pwr_oe4		(major_mode, pwr_oe4,   hisn_pwr_oe4,   1'b0);
-mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_ssp_din,   rl_data_out);
-mux2 mux_pwr_hi			(major_mode, pwr_hi,    hisn_pwr_hi,    1'b0);
-mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   1'b0);
+mux2 mux_ssp_clk		(major_mode, ssp_clk,   hisn_ssp_clk,   		rl_ssp_clk);
+mux2 mux_ssp_din		(major_mode, ssp_din,   hisn_ssp_din_filtered,  rl_ssp_din);
+mux2 mux_ssp_frame		(major_mode, ssp_frame, hisn_ssp_frame, 		rl_ssp_frame);
+mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   		1'b0);
+mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   		1'b0);
+mux2 mux_pwr_oe3		(major_mode, pwr_oe3,   hisn_pwr_oe3,   		1'b0);
+mux2 mux_pwr_oe4		(major_mode, pwr_oe4,   hisn_pwr_oe4,   		1'b0);
+mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_ssp_din_filtered,  rl_data_out);
+mux2 mux_pwr_hi			(major_mode, pwr_hi,    hisn_pwr_hi,    		1'b0);
+mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   		1'b0);
 
 
-reg [3:0] div_counter;
-reg buf_dbg;
+reg [3:0] div_counter = 4'b0;
+reg buf_dbg = 1'b0;
 
-reg [23:0] receive_buffer;
-reg [2:0] bit_counter;
+reg [23:0] receive_buffer = 24'b0;
+reg [2:0] bit_counter = 3'b0;
 
 reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
 
@@ -178,6 +178,9 @@ begin
 assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
 
 assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? receive_buffer[7] : ssp_dout;
+
+// Do not transmit timing info to ARM
+assign hisn_ssp_din_filtered = (mod_type == `TAGSIM_MOD) ? 1'b0 : hisn_ssp_din;
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;
