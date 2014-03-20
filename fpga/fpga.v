@@ -157,7 +157,7 @@ begin
 				end
 				else if ((receive_buffer[23:8] == `READER_END_COMM_1 || receive_buffer[23:8] == `READER_END_COMM_2) && bit_counter == 3'd0)
 				begin
-					relay_mod_type = `TAGSIM_LISTEN;
+					relay_mod_type = `READER_LISTEN;
 				end
 			end
 			else if (hi_simulate_mod_type == `FAKE_TAG) // Fake Tag
@@ -169,7 +169,7 @@ begin
 				end
 				else if (receive_buffer[15:8] == `TAG_END_COMM  && bit_counter == 3'd0)
 				begin
-					relay_mod_type = `READER_LISTEN;
+					relay_mod_type = `TAGSIM_LISTEN;
 				end
 			end
 		end
