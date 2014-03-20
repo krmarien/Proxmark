@@ -92,6 +92,11 @@ assign hi_simulate_mod_type = conf_word[2:0];
 reg [2:0] relay_mod_type = 3'b0;
 wire [2:0] mod_type;
 
+assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
+
+wire hisn_ssp_dout;
+wire hisn_ssp_din_filtered;
+
 //-----------------------------------------------------------------------------
 // And then we instantiate the modules corresponding to each of the FPGA's
 // major modes, and use muxes to connect the outputs of the active mode to
@@ -133,7 +138,10 @@ reg buf_dbg = 1'b0;
 reg [23:0] receive_buffer = 24'b0;
 reg [2:0] bit_counter = 3'b0;
 
-reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
+//reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
+
+//reg [87:0] tmp_signal = 88'hc0c00c000c00c00c00c000;
+reg [87:0] tmp_signal = 88'h00c0c00c00c00c000c0000;
 
 always @(posedge ck_1356meg)
 begin
@@ -152,7 +160,7 @@ begin
 			begin
 				if (receive_buffer[23:0] == {16'b0, `READER_START_COMM})
 				begin
-					relay_mod_type = `TAGSIM_MOD;
+					relay_mod_type = `READER_MOD;
 					bit_counter = 3'b0;
 				end
 				else if ((receive_buffer[23:8] == `READER_END_COMM_1 || receive_buffer[23:8] == `READER_END_COMM_2) && bit_counter == 3'd0)
@@ -164,7 +172,7 @@ begin
 			begin
 				if (receive_buffer[23:0] == {16'b0, `TAG_START_COMM})
 				begin
-					relay_mod_type = `READER_MOD;
+					relay_mod_type = `TAGSIM_MOD;
 					bit_counter = 3'b0;
 				end
 				else if (receive_buffer[15:8] == `TAG_END_COMM  && bit_counter == 3'd0)
@@ -174,8 +182,6 @@ begin
 			end
 		end
 	end
-
-assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
 
 assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? receive_buffer[7] : ssp_dout;
 
