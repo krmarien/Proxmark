@@ -108,6 +108,6 @@ void RAMFUNC RelayDelayIso14443a(uint8_t param) {
 
 done:
 	AT91C_BASE_PDC_SSC->PDC_PTCR = AT91C_PDC_RXTDIS;
-	Dbprintf("Relay delay was: %u cycles (%u \u03BCs)", delay, (delay/100)*59);
+	Dbprintf("Relay delay was: %u cycles (%u \u03BCs)", delay, (delay/1000)*74);
 	LEDsoff();
 }
