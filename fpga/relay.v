@@ -51,6 +51,10 @@ begin
     if (div_counter[3:0] == 4'b1000) ssp_clk <= 1'b0;
     if (div_counter[3:0] == 4'b0000) ssp_clk <= 1'b1;
 
+    if (sending_started == 1'b1 && received_complete == 1'b0) begin
+        delay_counter = delay_counter + 1;
+    end
+
     if (div_counter[2:0] == 3'b100) // 1.695MHz
     begin
         if (mod_type == `MASTER) // Sending from ARM to other Proxmark
@@ -59,10 +63,6 @@ begin
 
             if (div_counter[6:4] == 3'b000) ssp_frame = 1'b1;
             else ssp_frame = 1'b0;
-
-            if (sending_started == 1'b1 && received_complete == 1'b0) begin
-                delay_counter = delay_counter + 1;
-            end
 
             if (receive_counter[0] == 1'b0) begin
                 data_out = ssp_dout;
