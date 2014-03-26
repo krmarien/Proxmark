@@ -2811,8 +2811,8 @@ void RelayTagIso14443a(void) {
             b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
 			if(MillerDecoding(b, 0)) {
 				break;
-				if (!LogTrace(receivedResponse, Uart.len, Uart.startTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, Uart.parityBits, FALSE)) break;
-				if (!LogTrace(NULL, 0, Uart.endTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, 0, FALSE)) break;
+				LogTrace(receivedResponse, Uart.len, Uart.startTime*16 - DELAY_AIR2ARM_AS_TAG, Uart.parityBits, TRUE);
+				LogTrace(NULL, 0, Uart.endTime*16 - DELAY_AIR2ARM_AS_TAG, 0, TRUE);
 
 				UartReset();
 			}
@@ -2869,8 +2869,8 @@ void RelayReaderIso14443a(void) {
 			}
 			if(ManchesterDecoding(b, 0, 0)) {
 				break;
-				if (!LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, Demod.parityBits, FALSE)) break;
-				if (!LogTrace(NULL, 0, Demod.endTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, 0, FALSE)) break;
+				LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_AIR2ARM_AS_READER, Demod.parityBits, FALSE);
+				LogTrace(NULL, 0, Demod.endTime*16 - DELAY_AIR2ARM_AS_READER, 0, FALSE);
 
 				// And ready to receive another response.
 				DemodReset();
