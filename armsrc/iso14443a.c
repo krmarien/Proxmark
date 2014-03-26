@@ -2781,9 +2781,10 @@ void RAMFUNC SniffMifare(uint8_t param) {
 void RelayTagIso14443a(void) {
 	DbpString("Fake Tag");
 
-	LEDsoff();
 	// init trace buffer
 	iso14a_clear_trace();
+	iso14443a_setup(FPGA_HF_ISO14443A_TAGSIM_LISTEN);
+	LEDsoff();
 
 	uint8_t *receivedResponse = (((uint8_t *)BigBuf) + RECV_RES_OFFSET);
 
@@ -2827,9 +2828,10 @@ void RelayTagIso14443a(void) {
 void RelayReaderIso14443a(void) {
 	DbpString("Fake Reader");
 
-	LEDsoff();
 	// init trace buffer
 	iso14a_clear_trace();
+	iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
+	LEDsoff();
 
 	// The response (tag -> reader) that we're receiving.
 	uint8_t *receivedResponse = (((uint8_t *)BigBuf) + RECV_RES_OFFSET);
@@ -2859,10 +2861,12 @@ void RelayReaderIso14443a(void) {
 		WDT_HIT();
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
-			c++;
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
 			Dbprintf("%02x", b);
-			data[c%100] = b;
+			if (b > 0) {
+				data[c%100] = b;
+				c++;
+			}
 			if(ManchesterDecoding(b, 0, 0)) {
 				break;
 				if (!LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, Demod.parityBits, FALSE)) break;
@@ -2879,7 +2883,7 @@ void RelayReaderIso14443a(void) {
 	Dbprintf("Received: %u", c);
 
 	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
+/*
 	int next = 0;
 	int carry = 0;
 	for(int i = 0 ; i < 100 ; ++i) {
@@ -2948,7 +2952,7 @@ void RelayReaderIso14443a(void) {
 		carry = next;
 	}
 
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);*/
 
 	DbpString("COMMAND FINISHED");
 

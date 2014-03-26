@@ -121,7 +121,7 @@ relay rl(
 );
 
 mux2 mux_ssp_clk		(major_mode, ssp_clk,   hisn_ssp_clk,   		rl_ssp_clk);
-mux2 mux_ssp_din		(major_mode, ssp_din,   hisn_ssp_din_filtered,  rl_ssp_din);
+mux2 mux_ssp_din		(major_mode, ssp_din,   hisn_ssp_din,  rl_ssp_din);
 mux2 mux_ssp_frame		(major_mode, ssp_frame, hisn_ssp_frame, 		rl_ssp_frame);
 mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   		1'b0);
 mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   		1'b0);
@@ -183,6 +183,9 @@ end
 assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
 
 assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? receive_buffer[15] : ssp_dout;
+
+// Do not transmit timing info to ARM
+assign hisn_ssp_din_filtered = (mod_type != `TAGSIM_MOD) & hisn_ssp_din;
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;
