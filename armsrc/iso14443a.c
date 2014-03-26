@@ -2862,7 +2862,7 @@ void RelayReaderIso14443a(void) {
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
-			Dbprintf("%02x", b);
+			//Dbprintf("%02x", b);
 			if (b > 0) {
 				data[c%100] = b;
 				c++;
