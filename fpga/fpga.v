@@ -135,58 +135,54 @@ mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   		1'b0);
 reg [3:0] div_counter = 4'b0;
 reg buf_dbg = 1'b0;
 
-reg [23:0] receive_buffer = 24'b0;
+reg [31:0] receive_buffer = 32'b0;
 reg [2:0] bit_counter = 3'b0;
 
-//reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
-
-//reg [87:0] tmp_signal = 88'hc0c00c000c00c00c00c000;
-reg [87:0] tmp_signal = 88'h00c0c00c00c00c000c0000;
+reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
 
 always @(posedge ck_1356meg)
 begin
-		div_counter <= div_counter + 1;
-		buf_dbg = dbg;
+	div_counter <= div_counter + 1;
+	buf_dbg = dbg;
 
-		// div_counter[3:0] == 3'b100 => 0.8475MHz
-		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
+	// div_counter[3:0] == 3'b100 => 0.8475MHz
+	if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
+	begin
+		//receive_buffer = {receive_buffer[15:0], buf_dbg};
+		receive_buffer = {receive_buffer[23:0], tmp_signal[79]};
+		tmp_signal = {tmp_signal[78:0], 1'b0};
+		bit_counter = bit_counter + 1;
+
+		if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
 		begin
-			//receive_buffer = {receive_buffer[15:0], buf_dbg};
-			receive_buffer = {receive_buffer[23:0], tmp_signal[79]};
-			tmp_signal = {tmp_signal[78:0], 1'b0};
-			bit_counter = bit_counter + 1;
-
-			if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
+			if (receive_buffer[23:0] == {16'b0, `READER_START_COMM})
 			begin
-				if (receive_buffer[23:0] == {16'b0, `READER_START_COMM})
-				begin
-					relay_mod_type = `READER_MOD;
-					bit_counter = 3'b0;
-				end
-				else if ((receive_buffer[23:8] == `READER_END_COMM_1 || receive_buffer[23:8] == `READER_END_COMM_2) && bit_counter == 3'd0)
-				begin
-					relay_mod_type = `READER_LISTEN;
-				end
+				relay_mod_type = `READER_MOD;
+				bit_counter = 3'b0;
 			end
-			else if (hi_simulate_mod_type == `FAKE_TAG) // Fake Tag
+			else if ((receive_buffer[31:0] == {`READER_END_COMM_1, 16'b0} || receive_buffer[31:0] == {`READER_END_COMM_2, 16'b0}) && bit_counter == 3'd0)
 			begin
-				if (receive_buffer[23:0] == {16'b0, `TAG_START_COMM})
-				begin
-					relay_mod_type = `TAGSIM_MOD;
-					bit_counter = 3'b0;
-				end
-				else if (receive_buffer[15:8] == `TAG_END_COMM  && bit_counter == 3'd0)
-				begin
-					relay_mod_type = `TAGSIM_LISTEN;
-				end
+				relay_mod_type = `READER_LISTEN;
+			end
+		end
+		else if (hi_simulate_mod_type == `FAKE_TAG) // Fake Tag
+		begin
+			if (receive_buffer[23:0] == {16'b0, `TAG_START_COMM})
+			begin
+				relay_mod_type = `TAGSIM_MOD;
+				bit_counter = 3'b0;
+			end
+			else if (receive_buffer[23:0] == {`TAG_END_COMM, 16'b0}  && bit_counter == 3'd0)
+			begin
+				relay_mod_type = `TAGSIM_LISTEN;
 			end
 		end
 	end
+end
 
-assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? receive_buffer[7] : ssp_dout;
+assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
 
-// Do not transmit timing info to ARM
-assign hisn_ssp_din_filtered = (mod_type == `TAGSIM_MOD) ? 1'b0 : hisn_ssp_din;
+assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? receive_buffer[15] : ssp_dout;
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;

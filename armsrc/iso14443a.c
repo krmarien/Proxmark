@@ -2785,104 +2785,42 @@ void RelayTagIso14443a(void) {
 	// init trace buffer
 	iso14a_clear_trace();
 
-	bool triggered = FALSE;
+	uint8_t *receivedResponse = (((uint8_t *)BigBuf) + RECV_RES_OFFSET);
 
-	// The command (reader -> tag) that we're receiving.
-	// The length of a received command will in most cases be no more than 18 bytes.
-	// So 32 should be enough!
-	uint8_t *receivedCmd = (((uint8_t *)BigBuf) + RECV_CMD_OFFSET);
+	FpgaWriteConfWord(FPGA_MAJOR_MODE_HF_ISO14443A | FPGA_HF_ISO14443A_RELAY_TAG);
 
-	// As we receive stuff, we copy it from receivedCmd or receivedResponse
-	// into trace, along with its length and other annotations.
-	//uint8_t *trace = (uint8_t *)BigBuf;
+	// Now run a `software UART' on the stream of incoming samples.
+	UartReset();
+    Uart.output = receivedResponse;
 
-	// The DMA buffer, used to stream samples from the FPGA
-	uint8_t *dmaBuf = ((uint8_t *)BigBuf) + DMA_BUFFER_OFFSET;
-	uint8_t *data = dmaBuf;
-	uint8_t previous_data = 0;
-	int maxDataLen = 0;
-	int dataLen = 0;
+	// clear RXRDY:
+    uint8_t b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
 
-	iso14443a_setup(FPGA_HF_ISO14443A_RELAY_TAG);
+    for(;;) {
+		LED_B_ON();
 
-	// Set up the demodulator for the reader -> tag commands
-	Uart.output = receivedCmd;
-
-	// Setup and start DMA.
-	FpgaSetupSscDma((uint8_t *)dmaBuf, DMA_BUFFER_SIZE);
-
-	// And now we loop, receiving samples.
-	for(uint32_t rsamples = 0; TRUE; ) {
 		if(BUTTON_PRESS()) {
 			DbpString("cancelled by button");
 			break;
 		}
 
-		LED_A_ON();
-		WDT_HIT();
+        WDT_HIT();
 
-		int register readBufDataP = data - dmaBuf;
-		int register dmaBufDataP = DMA_BUFFER_SIZE - AT91C_BASE_PDC_SSC->PDC_RCR;
-		if (readBufDataP <= dmaBufDataP){
-			dataLen = dmaBufDataP - readBufDataP;
-		} else {
-			dataLen = DMA_BUFFER_SIZE - readBufDataP + dmaBufDataP;
-		}
-		// test for length of buffer
-		if(dataLen > maxDataLen) {
-			maxDataLen = dataLen;
-			if(dataLen > 400) {
-				Dbprintf("blew circular buffer! dataLen=%d", dataLen);
+        if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
+            b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
+			if(MillerDecoding(b, 0)) {
 				break;
-			}
-		}
-		if(dataLen < 1) continue;
+				if (!LogTrace(receivedResponse, Uart.len, Uart.startTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, Uart.parityBits, FALSE)) break;
+				if (!LogTrace(NULL, 0, Uart.endTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, 0, FALSE)) break;
 
-		// primary buffer was stopped( <-- we lost data!
-		if (!AT91C_BASE_PDC_SSC->PDC_RCR) {
-			AT91C_BASE_PDC_SSC->PDC_RPR = (uint32_t) dmaBuf;
-			AT91C_BASE_PDC_SSC->PDC_RCR = DMA_BUFFER_SIZE;
-			Dbprintf("RxEmpty ERROR!!! data length:%d", dataLen); // temporary
-		}
-		// secondary buffer sets as primary, secondary buffer was stopped
-		if (!AT91C_BASE_PDC_SSC->PDC_RNCR) {
-			AT91C_BASE_PDC_SSC->PDC_RNPR = (uint32_t) dmaBuf;
-			AT91C_BASE_PDC_SSC->PDC_RNCR = DMA_BUFFER_SIZE;
-		}
-
-		LED_A_OFF();
-
-		if (rsamples & 0x01) {
-			uint8_t readerdata = (previous_data & 0xF0) | (*data >> 4);
-			if (MillerDecoding(readerdata, (rsamples-1)*4)) {
-				LED_C_ON();
-
-				// check - if there is a short 7bit request from reader
-				if ((!triggered) && (Uart.len == 1) && (Uart.bitCount == 7)) triggered = TRUE;
-
-				if(triggered) {
-					if (!LogTrace(receivedCmd, Uart.len, Uart.startTime*16 - DELAY_READER_AIR2ARM_AS_SNIFFER, Uart.parityBits, TRUE)) break;
-					if (!LogTrace(NULL, 0, Uart.endTime*16 - DELAY_READER_AIR2ARM_AS_SNIFFER, 0, TRUE)) break;
-				}
-				/* And ready to receive another command. */
 				UartReset();
-				LED_B_OFF();
 			}
-		}
-
-		previous_data = *data;
-		rsamples++;
-		data++;
-		if(data > dmaBuf + DMA_BUFFER_SIZE) {
-			data = dmaBuf;
-		}
-	} // main cycle
+ 		}
+    }
 
 	DbpString("COMMAND FINISHED");
 
 	FpgaDisableSscDma();
-	Dbprintf("maxDataLen=%d, Uart.state=%x, Uart.len=%d", maxDataLen, Uart.state, Uart.len);
-	Dbprintf("traceLen=%d, Uart.output[0]=%08x", traceLen, (uint32_t)Uart.output[0]);
 	LEDsoff();
 }
 
@@ -2903,6 +2841,11 @@ void RelayReaderIso14443a(void) {
 	Demod.output = receivedResponse;
 
     uint8_t b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
+    char data[100];
+    for(int i = 0 ; i < 100 ; i++) {
+    	data[i] = 0;
+    }
+    uint16_t c = 0;
 
 	// And now we loop, receiving samples.
 	for(;;) {
@@ -2916,8 +2859,10 @@ void RelayReaderIso14443a(void) {
 		WDT_HIT();
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
+			c++;
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
 			Dbprintf("%02x", b);
+			data[c%100] = b;
 			if(ManchesterDecoding(b, 0, 0)) {
 				break;
 				if (!LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_TAG_AIR2ARM_AS_SNIFFER, Demod.parityBits, FALSE)) break;
@@ -2926,8 +2871,84 @@ void RelayReaderIso14443a(void) {
 				// And ready to receive another response.
 				DemodReset();
 			}
+			if (c > 90)
+				break;
 		}
 	}
+
+	Dbprintf("Received: %u", c);
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	int next = 0;
+	int carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	next = 0;
+	carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	next = 0;
+	carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	next = 0;
+	carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	next = 0;
+	carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	next = 0;
+	carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
+
+	next = 0;
+	carry = 0;
+	for(int i = 0 ; i < 100 ; ++i) {
+		next = (data[i] & 1) ? 0x80 : 0;
+		data[i] = carry | (data[i] >> 1);
+		carry = next;
+	}
+
+	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
 
 	DbpString("COMMAND FINISHED");
 
