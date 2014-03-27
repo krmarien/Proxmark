@@ -144,7 +144,7 @@ begin
 	div_counter <= div_counter + 1;
 	buf_dbg = dbg;
 
-	// div_counter[3:0] == 3'b100 => 0.8475MHz
+	// div_counter[3:0] == 4'b1000 => 0.8475MHz
 	if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 	begin
 		//receive_buffer = {receive_buffer[15:0], buf_dbg};
