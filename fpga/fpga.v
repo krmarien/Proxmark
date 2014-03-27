@@ -148,7 +148,7 @@ begin
 	if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 	begin
 		//receive_buffer = {receive_buffer[15:0], buf_dbg};
-		receive_buffer = {receive_buffer[23:0], tmp_signal[79]};
+		receive_buffer = {receive_buffer[30:0], tmp_signal[79]};
 		tmp_signal = {tmp_signal[78:0], 1'b0};
 		bit_counter = bit_counter + 1;
 
