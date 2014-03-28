@@ -1227,6 +1227,8 @@ static void TransmitFor14443a(const uint8_t *cmd, int len, uint32_t *timing)
 	// }
 
 	uint16_t c = 0;
+
+	c = 0;
 	for(;;) {
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
 			AT91C_BASE_SSC->SSC_THR = cmd[c];
@@ -2843,11 +2845,6 @@ void RelayReaderIso14443a(void) {
 	Demod.output = receivedResponse;
 
     uint8_t b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
-    char data[100];
-    for(int i = 0 ; i < 100 ; i++) {
-    	data[i] = 0;
-    }
-    uint16_t c = 0;
 
 	// And now we loop, receiving samples.
 	for(;;) {
@@ -2862,97 +2859,16 @@ void RelayReaderIso14443a(void) {
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
-			//Dbprintf("%02x", b);
-			if (b > 0) {
-				data[c%100] = b;
-				c++;
-			}
+
 			if(ManchesterDecoding(b, 0, 0)) {
-				break;
 				LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_AIR2ARM_AS_READER, Demod.parityBits, FALSE);
 				LogTrace(NULL, 0, Demod.endTime*16 - DELAY_AIR2ARM_AS_READER, 0, FALSE);
 
 				// And ready to receive another response.
 				DemodReset();
 			}
-			if (c > 90)
-				break;
 		}
 	}
-
-	Dbprintf("Received: %u", c);
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-/*
-	int next = 0;
-	int carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
-	next = 0;
-	carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
-	next = 0;
-	carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
-	next = 0;
-	carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
-	next = 0;
-	carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
-	next = 0;
-	carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-
-	next = 0;
-	carry = 0;
-	for(int i = 0 ; i < 100 ; ++i) {
-		next = (data[i] & 1) ? 0x80 : 0;
-		data[i] = carry | (data[i] >> 1);
-		carry = next;
-	}
-
-	Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x ", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);*/
 
 	DbpString("COMMAND FINISHED");
 
