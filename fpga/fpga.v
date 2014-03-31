@@ -137,24 +137,15 @@ reg buf_dbg = 1'b0;
 reg [23:0] receive_buffer = 24'b0;
 reg [2:0] bit_counter = 3'b0;
 
-reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
-
 always @(posedge ck_1356meg)
 begin
 	div_counter <= div_counter + 1;
 	buf_dbg = dbg;
 
-	if (!(hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
-	begin
-		tmp_signal = 80'hc0c00c00c00c000c0000;
-	end
-
 	// div_counter[3:0] == 4'b1000 => 0.8475MHz
 	if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 	begin
-		//receive_buffer = {receive_buffer[15:0], buf_dbg};
-		receive_buffer = {receive_buffer[22:0], tmp_signal[79]};
-		tmp_signal = {tmp_signal[78:0], 1'b0};
+		receive_buffer = {receive_buffer[15:0], buf_dbg};
 		bit_counter = bit_counter + 1;
 
 		if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
@@ -176,7 +167,7 @@ begin
 				relay_mod_type = `TAGSIM_MOD;
 				bit_counter = 3'b0;
 			end
-			else if (receive_buffer[23:0] == {`TAG_END_COMM, 16'b0}  && bit_counter == 3'd0)
+			else if (receive_buffer[15:0] == {`TAG_END_COMM, 8'b0}  && bit_counter == 3'd0)
 			begin
 				relay_mod_type = `TAGSIM_LISTEN;
 			end
