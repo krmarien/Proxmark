@@ -134,8 +134,7 @@ mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   		1'b0);
 reg [3:0] div_counter = 4'b0;
 
 reg [7:0] buf_dbg = 8'b0;
-wire [3:0] buf_dbg_cntr = 4'b0;
-assign buf_dbg_cntr = buf_dbg[7] + buf_dbg[6] + buf_dbg[5] + buf_dbg[4] + buf_dbg[3] + buf_dbg[2] + buf_dbg[1] + buf_dbg[0];
+reg [3:0] buf_dbg_cntr = 4'b0;
 
 
 reg [23:0] receive_buffer = 24'b0;
@@ -149,11 +148,12 @@ always @(posedge ck_1356meg)
 begin
 	div_counter <= div_counter + 1;
     buf_dbg = {buf_dbg[6:0], dbg};
+    buf_dbg_cntr = buf_dbg[7] + buf_dbg[6] + buf_dbg[5] + buf_dbg[4] + buf_dbg[3] + buf_dbg[2] + buf_dbg[1] + buf_dbg[0];
 
 	// div_counter[3:0] == 4'b1000 => 0.8475MHz
 	if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 	begin
-		receive_buffer = {receive_buffer[22:0], buf_dbg[2]};
+		receive_buffer = {receive_buffer[22:0], |buf_dbg_cntr[3:2]};
 		bit_counter = bit_counter + 1;
 
 		if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
