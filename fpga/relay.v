@@ -1,3 +1,5 @@
+`include "relay_decode.v"
+`include "relay_encode.v"
 
 
 `define SNIFFER			3'b000
@@ -17,23 +19,28 @@
 
 module relay (
 	clk,
+	reset,
 	data_in,
 	hi_simulate_mod_type,
 	mod_type,
-	data_out
+	data_out,
+	relay_decoded,
+	relay_encoded
 );
-	input clk, data_in;
+	input clk, reset, data_in;
 	input [2:0] hi_simulate_mod_type;
 	output [2:0] mod_type;
 	output data_out;
+	input relay_decoded;
+	output relay_encoded;
 
 	reg [2:0] mod_type;
 	wire [0:0] data_out;
+	wire [0:0] relay_encoded;
 
 
+	wire data_in_decoded;
 	reg [3:0] div_counter = 4'b0;
-
-	reg [0:0] buf_data_in = 1'b0;
 
 	reg [19:0] receive_buffer = 20'b0;
 	reg [2:0] bit_counter = 3'b0;
@@ -45,7 +52,6 @@ module relay (
 	always @(posedge clk)
 	begin
 		div_counter <= div_counter + 1;
-	    buf_data_in = data_in;
 
 	    if (!(hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
@@ -55,9 +61,9 @@ module relay (
 		// div_counter[3:0] == 4'b1000 => 0.8475MHz
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
-			//receive_buffer = {receive_buffer[18:0], buf_data_in};
-			receive_buffer = {receive_buffer[18:0], tmp_signal[79]};
+  			receive_buffer = {receive_buffer[18:0], tmp_signal[79]};
   			tmp_signal = {tmp_signal[78:0], 1'b0};
+			//receive_buffer = {receive_buffer[18:0], data_in_decoded};
 			bit_counter = bit_counter + 1;
 
 			if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
@@ -86,4 +92,19 @@ module relay (
 			end
 		end
 	end
+
+	relay_encode re(
+		clk,
+		reset,
+		(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_decoded,
+		relay_encoded
+	);
+
+	relay_decode rd(
+		clk,
+		reset,
+		(hi_simulate_mod_type == `FAKE_READER),
+		tmp_signal[79],
+		data_in_decoded
+	);
 endmodule

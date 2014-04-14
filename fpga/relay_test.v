@@ -29,8 +29,7 @@ reg ssp_din = 1'b0;
 
 reg [6:0] div_counter = 7'b0;
 
-reg [7:0] buf_data_in = 8'b0;
-reg [3:0] buf_data_in_cntr = 4'b0;
+reg [0:0] buf_data_in = 1'b0;
 
 reg [0:0] receive_counter = 1'b0;
 reg [31:0] delay_counter = 32'h0;
@@ -48,8 +47,7 @@ reg [16:0] to_arm_delay = 17'b0;
 always @(posedge ck_1356meg)
 begin
     div_counter <= div_counter + 1;
-    buf_data_in = {buf_data_in[6:0], data_in};
-    buf_data_in_cntr = buf_data_in[7] + buf_data_in[6] + buf_data_in[5] + buf_data_in[4] + buf_data_in[3] + buf_data_in[2] + buf_data_in[1] + buf_data_in[0];
+    buf_data_in = data_in;
 
     if (div_counter[3:0] == 4'b1000) ssp_clk <= 1'b0;
     if (div_counter[3:0] == 4'b0000) ssp_clk <= 1'b1;
@@ -71,7 +69,7 @@ begin
                 data_out = ssp_dout;
 
                 send_buf = {send_buf[2:0], ssp_dout};
-                receive_buffer = {receive_buffer[6:0], |buf_data_in_cntr[3:2]};
+                receive_buffer = {receive_buffer[6:0], buf_data_in};
 
                 if (send_buf == 4'ha && sending_started == 1'b0) begin
                     delay_counter = 32'b0;
@@ -91,8 +89,8 @@ begin
             counter <= counter + 1;
 
             if (counter[0] == 1'b0) begin
-                receive_buffer = {receive_buffer[6:0], |buf_data_in_cntr[3:2]};
-                data_out = |buf_data_in_cntr[3:2];
+                receive_buffer = {receive_buffer[6:0], buf_data_in};
+                data_out = buf_data_in;
 
                 ssp_frame = (receive_buffer[7:4] == 4'b1111);
                 if (receive_buffer[7:4] == 4'b1111) begin

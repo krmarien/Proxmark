@@ -87,9 +87,10 @@ wire [2:0] relay_mod_type;
 wire [2:0] mod_type;
 
 wire hisn_ssp_dout;
-wire hisn_ssp_din_filtered;
 
 wire relay_out;
+
+wire relay_active = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG);
 
 //-----------------------------------------------------------------------------
 // And then we instantiate the modules corresponding to each of the FPGA's
@@ -109,10 +110,13 @@ hi_iso14443a hisn(
 
 relay r(
 	ck_1356meg,
+	~relay_active,
 	dbg,
 	hi_simulate_mod_type,
 	relay_mod_type,
-	relay_out
+	relay_out,
+	hisn_ssp_din,
+	relay_relay
 );
 
 relay_test rt(
@@ -129,16 +133,13 @@ mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   		1'b0);
 mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   		1'b0);
 mux2 mux_pwr_oe3		(major_mode, pwr_oe3,   hisn_pwr_oe3,   		1'b0);
 mux2 mux_pwr_oe4		(major_mode, pwr_oe4,   hisn_pwr_oe4,   		1'b0);
-mux2 mux_pwr_lo			(major_mode, pwr_lo,    hisn_ssp_din_filtered,  rt_data_out);
+mux2 mux_pwr_lo			(major_mode, pwr_lo,    relay_relay,  			rt_data_out);
 mux2 mux_pwr_hi			(major_mode, pwr_hi,    hisn_pwr_hi,    		1'b0);
 mux2 mux_adc_clk		(major_mode, adc_clk,   hisn_adc_clk,   		1'b0);
 
-assign mod_type = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_mod_type : hi_simulate_mod_type;
+assign mod_type = relay_active ? relay_mod_type : hi_simulate_mod_type;
 
-assign hisn_ssp_dout = (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG) ? relay_out : ssp_dout;
-
-// Do not transmit timing info to ARM
-assign hisn_ssp_din_filtered = (mod_type != `TAGSIM_MOD) & hisn_ssp_din;
+assign hisn_ssp_dout = relay_active ? relay_out : ssp_dout;
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;
