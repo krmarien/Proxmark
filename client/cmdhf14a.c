@@ -638,11 +638,14 @@ int CmdHF14ACmdRelay(const char *Cmd) {
     	c.cmd = CMD_RELAY_READER_ISO_14443a;
     } else if (param_getchar(Cmd, 0) == 't') {
     	c.cmd = CMD_RELAY_TAG_ISO_14443a;
+    } else if (param_getchar(Cmd, 0) == 'd') {
+    	c.cmd = CMD_RELAY_READ_ISO_14443a;
     } else {
 		PrintAndLog("Proxmark in Relay modus");
 		PrintAndLog("Usage:  hf 14a relay [r][t]");
 		PrintAndLog("r - fake reader");
 		PrintAndLog("t - fake tag");
+		PrintAndLog("d - read received");
 		PrintAndLog("sample: hf 14a relay r");
 		return 0;
     }

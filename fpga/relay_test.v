@@ -56,7 +56,7 @@ begin
         delay_counter = delay_counter + 1;
     end
 
-    if (div_counter[2:0] == 3'b100) // 1.695MHz
+    /*if (div_counter[2:0] == 3'b100) // 1.695MHz
     begin
         if (mod_type == `MASTER) // Sending from ARM to other Proxmark
         begin
@@ -125,7 +125,7 @@ begin
                 to_arm_delay <= to_arm_delay + 1;
             end
         end
-    end
+    end*/
 end
 
 endmodule

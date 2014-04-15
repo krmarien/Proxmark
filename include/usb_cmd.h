@@ -109,6 +109,7 @@ typedef struct {
 
 #define CMD_RELAY_READER_ISO_14443a                                       0x0376
 #define CMD_RELAY_TAG_ISO_14443a                                          0x0377
+#define CMD_RELAY_READ_ISO_14443a 										  0x0378
 
 #define CMD_RELAY_MASTER                                                  0x0373
 #define CMD_RELAY_SLAVE                                                   0x0374

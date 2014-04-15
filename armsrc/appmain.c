@@ -790,6 +790,9 @@ void UsbPacketReceived(uint8_t *packet, int len)
 		case CMD_RELAY_TAG_ISO_14443a:
 			RelayTagIso14443a();
 			break;
+		case CMD_RELAY_READ_ISO_14443a:
+			RelayReadIso14443a();
+			break;
 
 		case CMD_READER_MIFARE:
             ReaderMifare(c->arg[0]);
