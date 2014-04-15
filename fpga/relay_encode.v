@@ -9,31 +9,36 @@ module relay_encode(
 
     reg [0:0] data_out = 1'b0;
 
-    reg [31:0] buffer_in = 32'b0;
-    reg [5:0] data_out_counter = 6'b0;
+    reg [3:0] buffer_in = 4'b0;
+    reg [6:0] data_out_counter = 7'b0;
+
+    reg [3:0] counter = 4'b0;
 
     always @(posedge clk)
     begin
         // encode
-        buffer_in = {buffer_in[30:0], data_in};
+        counter = counter + 1;
 
-        if (|data_out_counter[5:0] == 1'b1)
+        if (counter[3:0] == 4'b0)
+            buffer_in = {buffer_in[2:0], data_in};
+
+        if (|data_out_counter[6:0] == 1'b1)
             data_out_counter = data_out_counter - 1;
 
-        if (buffer_in == 32'hffff0000 || buffer_in == 32'hffffffff)
+        if (buffer_in == 4'hc || buffer_in == 4'hf)
         begin
             data_out = 1'b1;
-            buffer_in = 32'b0;
-            data_out_counter = 6'b100000;
+            buffer_in = 4'b0;
+            data_out_counter = 7'b1000000;
         end
 
-        if (data_out_counter[5:0] == 5'b0)
+        if (data_out_counter[6:0] == 7'b0)
             data_out = 1'b0;
 
         // reset
         if (reset == 1'b1)
         begin
-            buffer_in = 32'b0;
+            buffer_in = 4'b0;
             data_out = 1'b0;
         end
     end
