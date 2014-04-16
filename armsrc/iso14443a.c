@@ -2909,6 +2909,8 @@ void RelayReadIso14443a(void) {
     char data[40] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     int c = 0;
 
+    bool receiving = FALSE;
+
 	// And now we loop, receiving samples.
 	for(;;) {
 		LED_B_ON();
@@ -2921,8 +2923,9 @@ void RelayReadIso14443a(void) {
 		WDT_HIT();
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
-			if ((uint8_t)AT91C_BASE_SSC->SSC_RHR > 0) {
+			if ((uint8_t)AT91C_BASE_SSC->SSC_RHR > 0 || receiving) {
 				data[c++] = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
+				receiving = TRUE;
 				if (c > 39)
 					break;
 			}

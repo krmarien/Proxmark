@@ -102,7 +102,7 @@ hi_iso14443a hisn(
 	pck0, ck_1356meg, ck_1356megb,
 	, hisn_pwr_hi, hisn_pwr_oe1, hisn_pwr_oe2, hisn_pwr_oe3, hisn_pwr_oe4,
 	adc_d, hisn_adc_clk,
-	hisn_ssp_frame, /*hisn_ssp_din*/, hisn_ssp_dout, hisn_ssp_clk,
+	hisn_ssp_frame, hisn_ssp_din, hisn_ssp_dout, hisn_ssp_clk,
 	cross_hi, cross_lo,
 	,
 	mod_type
@@ -115,9 +115,9 @@ relay r(
 	hi_simulate_mod_type,
 	relay_mod_type,
 	relay_out,
-	,//hisn_ssp_din,
+	hisn_ssp_din,
 	relay_relay,
-	hisn_ssp_din
+	//hisn_ssp_din
 );
 
 relay_test rt(
