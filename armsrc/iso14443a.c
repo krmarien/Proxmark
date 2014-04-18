@@ -2826,6 +2826,18 @@ void RelayTagIso14443a(void) {
 	LEDsoff();
 }
 
+void shift_right(char *ar, int size, int shift)
+{
+    int carry = 0;                              // Clear the initial carry bit.
+    while (shift--) {                           // For each bit to shift ...
+        for (int i = 0; i < size; i++) {   // For each element of the array from high to low ...
+            int next = (ar[i] & 1) ? 0x80 : 0;  // ... if the low bit is set, set the carry bit.
+            ar[i] = carry | (ar[i] >> 1);       // Shift the element one bit left and addthe old carry.
+            carry = next;                       // Remember the old carry for next time.
+        }
+    }
+}
+
 void RelayReaderIso14443a(void) {
 	DbpString("Fake Reader");
 
@@ -2845,9 +2857,6 @@ void RelayReaderIso14443a(void) {
 
     uint8_t b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
 
-    char data[40] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    int c = 0;
-
 	// And now we loop, receiving samples.
 	for(;;) {
 		LED_A_ON();
@@ -2861,15 +2870,11 @@ void RelayReaderIso14443a(void) {
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
-			data[c] = b;
-			c++;
-			if (c > 39)
-				c =0;
+
 			LED_A_OFF();
 			if(ManchesterDecoding(b, 0, 0)) {
-				Dbprintf("%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23], data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31], data[32], data[33], data[34], data[35], data[36], data[37], data[38], data[39]);
-				//LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_AIR2ARM_AS_READER, Demod.parityBits, FALSE);
-				//LogTrace(NULL, 0, Demod.endTime*16 - DELAY_AIR2ARM_AS_READER, 0, FALSE);
+				LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_AIR2ARM_AS_READER, Demod.parityBits, FALSE);
+				LogTrace(NULL, 0, Demod.endTime*16 - DELAY_AIR2ARM_AS_READER, 0, FALSE);
 
 				// And ready to receive another response.
 				DemodReset();
@@ -2882,18 +2887,6 @@ void RelayReaderIso14443a(void) {
 
 	FpgaDisableSscDma();
 	LEDsoff();
-}
-
-void shift_right(char *ar, int size, int shift)
-{
-    int carry = 0;                              // Clear the initial carry bit.
-    while (shift--) {                           // For each bit to shift ...
-        for (int i = 0; i < size; i++) {   // For each element of the array from high to low ...
-            int next = (ar[i] & 1) ? 0x80 : 0;  // ... if the low bit is set, set the carry bit.
-            ar[i] = carry | (ar[i] >> 1);       // Shift the element one bit left and addthe old carry.
-            carry = next;                       // Remember the old carry for next time.
-        }
-    }
 }
 
 void RelayReadIso14443a(void) {

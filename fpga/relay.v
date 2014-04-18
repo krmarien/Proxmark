@@ -24,7 +24,7 @@ module relay (
 	hi_simulate_mod_type,
 	mod_type,
 	data_out,
-	relay_decoded,
+	relay_raw,
 	relay_encoded,
 	ssp_din
 );
@@ -32,7 +32,7 @@ module relay (
 	input [2:0] hi_simulate_mod_type;
 	output [2:0] mod_type;
 	output data_out;
-	input relay_decoded;
+	input relay_raw;
 	output relay_encoded, ssp_din;
 
 	reg [2:0] mod_type = 3'b0;
@@ -128,7 +128,7 @@ module relay (
 	relay_encode re(
 		clk,
 		reset,
-		tmp_signal[79], //(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_decoded,
+		tmp_signal[79], //(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,
 		relay_encoded
 	);
 
@@ -136,7 +136,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		tmp_signal[79],//data_in,//
+		tmp_signal[79], // data_in,//
 		data_in_decoded
 	);
 endmodule

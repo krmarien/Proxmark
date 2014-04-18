@@ -25,7 +25,7 @@ module relay_encode(
         if (|data_out_counter[6:0] == 1'b1)
             data_out_counter = data_out_counter - 1;
 
-        if (buffer_in == 4'hc || buffer_in == 4'hf)
+        if (buffer_in == 4'hc || buffer_in == 4'he || buffer_in == 4'hf)
         begin
             data_out = 1'b1;
             buffer_in = 4'b0;
