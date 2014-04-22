@@ -14,7 +14,7 @@
 `define READER_START_COMM_FIRST_CHAR	8'hc
 `define READER_END_COMM_1 				16'h0000
 `define READER_END_COMM_2 				16'hc000
-`define TAG_START_COMM_FIRST_CHAR		8'hf0
+`define TAG_START_COMM_FIRST_CHAR		8'hf
 `define TAG_END_COMM 					8'h00
 
 module relay (
@@ -46,8 +46,8 @@ module relay (
 	reg [19:0] receive_buffer = 20'b0;
 	reg [2:0] bit_counter = 3'b0;
 
-//	reg [79:0] tmp_signal = 80'hc0c00c00c00c000c0000;
-	reg [79:0] tmp_signal = 80'h00f0f00f00f00f000f00;
+	//reg [151:0] tmp_signal = 152'h00f0f00f00f00f000f00000000000000000000; // Test signal fake reader
+	reg [151:0] tmp_signal = 152'h0f00ff00f0f0f0ff00ff00f0f0f0f0f0f0f0ff; // Test signal fake tag
 
 	reg [79:0] in_buf = 80'b0;
 	reg send_to_arm = 1'b0;
@@ -74,7 +74,7 @@ module relay (
 		end
 
 		// When there will be transmitted something in the near future, stop sending carrier
-		if (tmp_signal[79]/*data_in*/ == 1'b1 && (mod_type == `READER_LISTEN || mod_type == `TAGSIM_LISTEN) && hi_simulate_mod_type != 3'b111)
+		if (tmp_signal[151]/*data_in*/ == 1'b1 && (mod_type == `READER_LISTEN || mod_type == `TAGSIM_LISTEN) && hi_simulate_mod_type != 3'b111)
 		begin
 			mod_type = 3'b0;
 		end
@@ -82,8 +82,8 @@ module relay (
 		// div_counter[3:0] == 4'b1000 => 0.8475MHz
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
-			//receive_buffer = {receive_buffer[18:0], tmp_signal[79]};
-			tmp_signal = {tmp_signal[78:0], 1'b0};
+			//receive_buffer = {receive_buffer[18:0], tmp_signal[151]};
+			tmp_signal = {tmp_signal[150:0], 1'b0};
 
 			receive_buffer = {receive_buffer[18:0], data_in_decoded};
 			bit_counter = bit_counter + 1;
@@ -119,7 +119,7 @@ module relay (
 				end
 				else if (receive_buffer[11:0] == {`TAG_END_COMM, 4'b0}  && bit_counter == 3'd0)
 				begin
-					mod_type = `TAGSIM_LISTEN;
+					mod_type = `TAGSIM_MOD;
 				end
 			end
 		end
@@ -128,7 +128,7 @@ module relay (
 	relay_encode re(
 		clk,
 		reset,
-		tmp_signal[79], //(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,
+		1'b0,//tmp_signal[151], //(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,
 		relay_encoded
 	);
 
@@ -136,7 +136,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		tmp_signal[79], // data_in,//
+		tmp_signal[151], // data_in,//
 		data_in_decoded
 	);
 endmodule
