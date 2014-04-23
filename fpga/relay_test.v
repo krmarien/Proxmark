@@ -46,7 +46,7 @@ reg [16:0] to_arm_delay = 17'b0;
 
 always @(posedge ck_1356meg)
 begin
-    div_counter <= div_counter + 1;
+    /*div_counter <= div_counter + 1;
     buf_data_in = data_in;
 
     if (div_counter[3:0] == 4'b1000) ssp_clk <= 1'b0;
@@ -56,7 +56,7 @@ begin
         delay_counter = delay_counter + 1;
     end
 
-    /*if (div_counter[2:0] == 3'b100) // 1.695MHz
+    if (div_counter[2:0] == 3'b100) // 1.695MHz
     begin
         if (mod_type == `MASTER) // Sending from ARM to other Proxmark
         begin

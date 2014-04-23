@@ -2826,18 +2826,6 @@ void RelayTagIso14443a(void) {
 	LEDsoff();
 }
 
-void shift_right(char *ar, int size, int shift)
-{
-    int carry = 0;                              // Clear the initial carry bit.
-    while (shift--) {                           // For each bit to shift ...
-        for (int i = 0; i < size; i++) {   // For each element of the array from high to low ...
-            int next = (ar[i] & 1) ? 0x80 : 0;  // ... if the low bit is set, set the carry bit.
-            ar[i] = carry | (ar[i] >> 1);       // Shift the element one bit left and addthe old carry.
-            carry = next;                       // Remember the old carry for next time.
-        }
-    }
-}
-
 void RelayReaderIso14443a(void) {
 	DbpString("Fake Reader");
 
@@ -2870,7 +2858,6 @@ void RelayReaderIso14443a(void) {
 
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
-
 			LED_A_OFF();
 			if(ManchesterDecoding(b, 0, 0)) {
 				LogTrace(receivedResponse, Demod.len, Demod.startTime*16 - DELAY_AIR2ARM_AS_READER, Demod.parityBits, FALSE);
@@ -2887,6 +2874,18 @@ void RelayReaderIso14443a(void) {
 
 	FpgaDisableSscDma();
 	LEDsoff();
+}
+
+void shift_right(char *ar, int size, int shift)
+{
+    int carry = 0;                              // Clear the initial carry bit.
+    while (shift--) {                           // For each bit to shift ...
+        for (int i = 0; i < size; i++) {   // For each element of the array from high to low ...
+            int next = (ar[i] & 1) ? 0x80 : 0;  // ... if the low bit is set, set the carry bit.
+            ar[i] = carry | (ar[i] >> 1);       // Shift the element one bit left and addthe old carry.
+            carry = next;                       // Remember the old carry for next time.
+        }
+    }
 }
 
 void RelayReadIso14443a(void) {
