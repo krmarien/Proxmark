@@ -115,7 +115,7 @@ relay r(
 	hi_simulate_mod_type,
 	relay_mod_type,
 	relay_out,
-	hisn_ssp_din,
+	hisn_ssp_dout,
 	relay_relay,
 	//hisn_ssp_din
 );
@@ -128,7 +128,7 @@ relay_test rt(
 );
 
 mux2 mux_ssp_clk		(major_mode, ssp_clk,   hisn_ssp_clk,   		rt_ssp_clk);
-mux2 mux_ssp_din		(major_mode, ssp_din,   hisn_ssp_din,           rt_ssp_din);
+mux2 mux_ssp_din		(major_mode, ssp_din,   dbg,                    rt_ssp_din);
 mux2 mux_ssp_frame		(major_mode, ssp_frame, hisn_ssp_frame, 		rt_ssp_frame);
 mux2 mux_pwr_oe1		(major_mode, pwr_oe1,   hisn_pwr_oe1,   		1'b0);
 mux2 mux_pwr_oe2		(major_mode, pwr_oe2,   hisn_pwr_oe2,   		1'b0);

@@ -127,8 +127,8 @@ module relay (
 
 	relay_encode re(
 		clk,
-		reset,
-		(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,//tmp_signal[151], //
+		1'b0,//*/reset,
+		relay_raw,//*/(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,//tmp_signal[151], //
 		relay_encoded
 	);
 
