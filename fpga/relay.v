@@ -119,7 +119,7 @@ module relay (
 				end
 				else if (receive_buffer[11:0] == {`TAG_END_COMM, 4'b0}  && bit_counter == 3'd0)
 				begin
-					mod_type = `TAGSIM_MOD;
+					mod_type = `TAGSIM_LISTEN;
 				end
 			end
 		end
