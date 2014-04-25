@@ -69,7 +69,7 @@ module relay (
 			end
 			else begin
 				ssp_din = in_buf[79];
-				in_buf = {in_buf[78:0], 1'b1};
+				in_buf = {in_buf[78:0], 1'b0};
 			end
 		end
 
@@ -128,6 +128,7 @@ module relay (
 	relay_encode re(
 		clk,
 		reset,
+		(hi_simulate_mod_type == `FAKE_READER),
 		(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,//tmp_signal[151], //
 		relay_encoded
 	);
