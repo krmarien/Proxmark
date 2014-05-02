@@ -1,7 +1,6 @@
 `include "relay_decode.v"
 `include "relay_encode.v"
 
-
 `define SNIFFER			3'b000
 `define TAGSIM_LISTEN	3'b001
 `define TAGSIM_MOD		3'b010
@@ -46,9 +45,6 @@ module relay (
 	reg [19:0] receive_buffer = 20'b0;
 	reg [2:0] bit_counter = 3'b0;
 
-	//reg [151:0] tmp_signal = 152'h00f0f00f00f00f000f00000000000000000000; // Test signal fake reader
-	//reg [151:0] tmp_signal = 152'h0f00ff00f0f0f0ff00ff00f0f0f0f0f0f0f0ff; // Test signal fake tag
-
 	reg [79:0] in_buf = 80'b0;
 	reg send_to_arm = 1'b0;
 	reg [19:0] to_arm_delay = 20'b0;
@@ -74,7 +70,7 @@ module relay (
 		end
 
 		// When there will be transmitted something in the near future, stop sending carrier
-		if (/*tmp_signal[151]*/data_in == 1'b1 && (mod_type == `READER_LISTEN || mod_type == `TAGSIM_LISTEN) && hi_simulate_mod_type != 3'b111)
+		if (data_in == 1'b1 && (mod_type == `READER_LISTEN || mod_type == `TAGSIM_LISTEN) && hi_simulate_mod_type != 3'b111)
 		begin
 			mod_type = 3'b0;
 		end
@@ -82,9 +78,6 @@ module relay (
 		// div_counter[3:0] == 4'b1000 => 0.8475MHz
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
-			//receive_buffer = {receive_buffer[18:0], tmp_signal[151]};
-			//tmp_signal = {tmp_signal[150:0], 1'b0};
-
 			receive_buffer = {receive_buffer[18:0], data_in_decoded};
 			bit_counter = bit_counter + 1;
 
@@ -129,7 +122,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,//tmp_signal[151], //
+		(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,
 		relay_encoded
 	);
 
@@ -137,7 +130,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		data_in,//tmp_signal[151], //
+		data_in,
 		data_in_decoded
 	);
 endmodule
