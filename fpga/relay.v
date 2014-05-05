@@ -44,7 +44,7 @@ module relay (
 	reg [4:0] div_counter = 7'b0;
 
 	reg [19:0] receive_buffer = 20'b0;
-	reg [2:0] bit_counter = 3'b0;
+	reg [0:0] half_byte_counter = 1'b0;
 
 	reg [79:0] in_buf = 80'b0;
 	reg send_to_arm = 1'b0;
@@ -78,11 +78,11 @@ module relay (
 
 		// Buffer decoded signals
 		if (data_in_available == 1'b1 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)) begin
-			receive_buffer = {receive_buffer[16:0], data_in_decoded};
-			bit_counter = bit_counter + 4;
+			receive_buffer = {receive_buffer[15:0], data_in_decoded};
+			half_byte_counter = half_byte_counter + 1;
 
 			// Debug signal
-			if (in_buf[79] == 1'b0 && send_to_arm == 1'b0)
+			if (|in_buf[79:76] == 1'b0 && send_to_arm == 1'b0)
 			begin
 				in_buf = {in_buf[75:0], data_in_decoded};
 			end
@@ -93,16 +93,16 @@ module relay (
 		end
 
 		// div_counter[3:0] == 4'b1000 => 0.8475MHz
-		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
+		if (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)
 		begin
 			if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
 			begin
 				if (receive_buffer[19:0] == {16'b0, `READER_START_COMM_FIRST_CHAR})
 				begin
 					mod_type = `READER_MOD;
-					bit_counter = 3'b0;
+					half_byte_counter = 3'b0;
 				end
-				else if ((receive_buffer[19:0] == {`READER_END_COMM_1, 4'b0} || receive_buffer[19:0] == {`READER_END_COMM_2, 4'b0}) && bit_counter == 3'd0)
+				else if ((receive_buffer[19:0] == {`READER_END_COMM_1, 4'b0} || receive_buffer[19:0] == {`READER_END_COMM_2, 4'b0}) && half_byte_counter == 3'd0)
 				begin
 					mod_type = `READER_LISTEN;
 				end
@@ -112,9 +112,9 @@ module relay (
 				if (receive_buffer[19:0] == {16'b0, `TAG_START_COMM_FIRST_CHAR})
 				begin
 					mod_type = `TAGSIM_MOD;
-					bit_counter = 3'b0;
+					half_byte_counter = 3'b0;
 				end
-				else if (receive_buffer[11:0] == {`TAG_END_COMM, 4'b0}  && bit_counter == 3'd0)
+				else if (receive_buffer[11:0] == {`TAG_END_COMM, 4'b0}  && half_byte_counter == 3'd0)
 				begin
 					mod_type = `TAGSIM_LISTEN;
 				end

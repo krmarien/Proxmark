@@ -29,7 +29,7 @@ module relay_decode(
         if (one_counter + zero_counter == 7'd64)
         begin
             if (one_counter > zero_counter)
-                data_out = (mode ? 4'hc : 4'hf);
+                data_out = (mode == 1'b1 ? 4'hc : 4'hf);
             else
                 data_out = 4'b0;
 
@@ -50,7 +50,7 @@ module relay_decode(
             one_counter = 7'b0;
             zero_counter = 7'b0;
             receiving = 1'b0;
-            data_out = 4'b0;
+            data_out = 4'ha;
             data_available = 1'b0;
         end
     end
