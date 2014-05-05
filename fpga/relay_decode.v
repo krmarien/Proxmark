@@ -3,19 +3,20 @@ module relay_decode(
     reset,
     mode,
     data_in,
-    data_out
+    data_out,
+    data_available
 );
     input clk, reset, mode, data_in;
-    output data_out;
+    output[3:0] data_out;
+    output[0:0] data_available;
 
-    reg [0:0] data_out = 1'b0;
+    reg [3:0] data_out = 4'b0;
+    reg [0:0] data_available = 1'b0;
 
     reg [6:0] one_counter = 7'b0;
     reg [6:0] zero_counter = 7'b0;
 
     reg [0:0] receiving = 1'b0;
-
-    reg [6:0] data_out_counter = 7'b0;
 
     always @(posedge clk)
     begin
@@ -25,21 +26,23 @@ module relay_decode(
         one_counter = one_counter + (data_in == 1'b1 & receiving);
         zero_counter = zero_counter + (data_in == 1'b0 & receiving);
 
-        if (|data_out_counter[6:0] == 1'b1)
-            data_out_counter = data_out_counter - 1;
-
         if (one_counter + zero_counter == 7'd64)
         begin
-            data_out = (one_counter > zero_counter);
+            if (one_counter > zero_counter)
+                data_out = (mode ? 4'hc : 4'hf);
+            else
+                data_out = 4'b0;
 
-            data_out_counter = (mode ? 7'b0100000 : 7'b1000000);
+            data_available = 1'b1;
 
             one_counter = 7'b0;
             zero_counter = 7'b0;
         end
-
-        if (data_out_counter[6:0] == 7'b0)
-            data_out = 1'b0;
+        else
+        begin
+            data_out = 4'b0;
+            data_available = 1'b0;
+        end
 
         // reset
         if (reset == 1'b1)
@@ -47,6 +50,8 @@ module relay_decode(
             one_counter = 7'b0;
             zero_counter = 7'b0;
             receiving = 1'b0;
+            data_out = 4'b0;
+            data_available = 1'b0;
         end
     end
 

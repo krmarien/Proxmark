@@ -39,7 +39,8 @@ module relay (
 	wire [0:0] relay_encoded;
 	reg [0:0] ssp_din;
 
-	wire data_in_decoded;
+	wire [3:0] data_in_decoded;
+	wire data_in_available;
 	reg [4:0] div_counter = 7'b0;
 
 	reg [19:0] receive_buffer = 20'b0;
@@ -75,22 +76,25 @@ module relay (
 			mod_type = 3'b0;
 		end
 
-		// div_counter[3:0] == 4'b1000 => 0.8475MHz
-		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
-		begin
-			receive_buffer = {receive_buffer[18:0], data_in_decoded};
-			bit_counter = bit_counter + 1;
+		// Buffer decoded signals
+		if (data_in_available == 1'b1 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)) begin
+			receive_buffer = {receive_buffer[16:0], data_in_decoded};
+			bit_counter = bit_counter + 4;
 
 			// Debug signal
 			if (in_buf[79] == 1'b0 && send_to_arm == 1'b0)
 			begin
-				in_buf = {in_buf[78:0], data_in_decoded};
+				in_buf = {in_buf[75:0], data_in_decoded};
 			end
 			else
 			begin
 				send_to_arm = 1'b1;
 			end
+		end
 
+		// div_counter[3:0] == 4'b1000 => 0.8475MHz
+		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
+		begin
 			if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
 			begin
 				if (receive_buffer[19:0] == {16'b0, `READER_START_COMM_FIRST_CHAR})
@@ -131,6 +135,7 @@ module relay (
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
 		data_in,
-		data_in_decoded
+		data_in_decoded,
+		data_in_available
 	);
 endmodule
