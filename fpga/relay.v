@@ -70,7 +70,7 @@ module relay (
 		end
 
 		// When there will be transmitted something in the near future, stop sending carrier
-		if (data_in == 1'b1 && (mod_type == `READER_LISTEN || mod_type == `TAGSIM_LISTEN) && hi_simulate_mod_type != 3'b111)
+		if (data_in == 1'b1 && mod_type == `READER_LISTEN && hi_simulate_mod_type != 3'b111)
 		begin
 			mod_type = 3'b0;
 		end
