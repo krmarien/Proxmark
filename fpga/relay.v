@@ -40,7 +40,7 @@ module relay (
 	reg [0:0] ssp_din;
 
 	wire data_in_decoded;
-	reg [4:0] div_counter = 7'b0;
+	reg [3:0] div_counter = 4'b0;
 
 	reg [19:0] receive_buffer = 20'b0;
 	reg [2:0] bit_counter = 3'b0;
