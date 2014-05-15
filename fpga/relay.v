@@ -24,8 +24,7 @@ module relay (
 	mod_type,
 	data_out,
 	relay_raw,
-	relay_encoded,
-	ssp_din
+	relay_encoded
 );
 	input clk, reset, data_in;
 	input [2:0] hi_simulate_mod_type;
@@ -45,51 +44,17 @@ module relay (
 	reg [19:0] receive_buffer = 20'b0;
 	reg [2:0] bit_counter = 3'b0;
 
-	reg [79:0] in_buf = 80'b0;
-	reg send_to_arm = 1'b0;
-	reg [19:0] to_arm_delay = 20'b0;
-
 	assign data_out = receive_buffer[3];
 
 	always @(posedge clk)
 	begin
 		div_counter <= div_counter + 1;
 
-		// Debug signal
-		if (hi_simulate_mod_type == 3'b111 && div_counter[3:0] == 4'b0000)
-		begin
-			mod_type = `READER_LISTEN;
-			if (to_arm_delay[19] == 1'b0)
-			begin
-				to_arm_delay = to_arm_delay + 1;
-			end
-			else begin
-				ssp_din = in_buf[79];
-				in_buf = {in_buf[78:0], 1'b0};
-			end
-		end
-
-		// When there will be transmitted something in the near future, stop sending carrier
-		if (data_in == 1'b1 && mod_type == `READER_LISTEN && hi_simulate_mod_type != 3'b111)
-		begin
-			mod_type = 3'b0;
-		end
-
 		// div_counter[3:0] == 4'b1000 => 0.8475MHz
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
 			receive_buffer = {receive_buffer[18:0], data_in_decoded};
 			bit_counter = bit_counter + 1;
-
-			// Debug signal
-			if (in_buf[79] == 1'b0 && send_to_arm == 1'b0)
-			begin
-				in_buf = {in_buf[78:0], data_in_decoded};
-			end
-			else
-			begin
-				send_to_arm = 1'b1;
-			end
 
 			if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
 			begin
