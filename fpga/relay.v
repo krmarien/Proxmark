@@ -41,40 +41,38 @@ module relay (
 	wire data_in_available;
 	reg [3:0] div_counter = 4'b0;
 
-	reg [23:0] receive_buffer = 24'b0;
+	reg [19:0] receive_buffer = 20'b0;
 	reg [0:0] half_byte_counter = 1'b0;
 
 	reg [179:0] tmp_signal = 180'h00f0f00f00f00f000f;
 
-	assign data_out = hi_simulate_mod_type == `FAKE_READER ? receive_buffer[7] : receive_buffer[3];
+	assign data_out = receive_buffer[3];
 
 	always @(posedge clk)
 	begin
 		div_counter <= div_counter + 1;
 
+		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
+		begin
+			receive_buffer = {receive_buffer[18:0], 1'b0};
+			tmp_signal = {tmp_signal[178:0], tmp_signal[179]};
+		end
+
 		// Buffer decoded signals
 		if (data_in_available == 1'b1 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)) begin
-			receive_buffer = {receive_buffer[19:0], data_in_decoded};
+			receive_buffer[3:0] = data_in_decoded;
 			half_byte_counter = half_byte_counter + 1;
-		end
 
-		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
-		begin
-			tmp_signal = {tmp_signal[178:0], 1'b0};
-		end
-
-		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
-		begin
 			if (hi_simulate_mod_type == `FAKE_READER) // Fake Reader
 			begin
-				if (receive_buffer[23:4] == {16'b0, `READER_START_COMM_FIRST_CHAR})
+				if (receive_buffer[19:0] == {16'b0, `READER_START_COMM_FIRST_CHAR})
 				begin
 					mod_type = `READER_MOD;
-					half_byte_counter = 3'b0;
+					half_byte_counter = 1'b0;
 				end
-				else if ((receive_buffer[23:4] == {`READER_END_COMM_1, 4'b0} || receive_buffer[23:4] == {`READER_END_COMM_2, 4'b0}) && half_byte_counter == 3'd0)
+				else if ((receive_buffer[19:0] == {`READER_END_COMM_1, 4'b0} || receive_buffer[19:0] == {`READER_END_COMM_2, 4'b0}) && half_byte_counter == 1'd0)
 				begin
-					mod_type = 3'b0;
+					mod_type = `READER_LISTEN;
 				end
 			end
 			else if (hi_simulate_mod_type == `FAKE_TAG) // Fake Tag
@@ -82,9 +80,9 @@ module relay (
 				if (receive_buffer[19:0] == {16'b0, `TAG_START_COMM_FIRST_CHAR})
 				begin
 					mod_type = `TAGSIM_MOD;
-					half_byte_counter = 3'b0;
+					half_byte_counter = 1'b0;
 				end
-				else if (receive_buffer[11:0] == {`TAG_END_COMM, 4'b0}  && half_byte_counter == 3'd0)
+				else if (receive_buffer[11:0] == {`TAG_END_COMM, 4'b0}  && half_byte_counter == 1'd0)
 				begin
 					mod_type = `TAGSIM_LISTEN;
 				end
