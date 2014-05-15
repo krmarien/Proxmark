@@ -44,8 +44,6 @@ module relay (
 	reg [19:0] receive_buffer = 20'b0;
 	reg [0:0] half_byte_counter = 1'b0;
 
-	reg [179:0] tmp_signal = 180'h00f0f00f00f00f000f;
-
 	assign data_out = receive_buffer[3];
 
 	always @(posedge clk)
@@ -55,7 +53,6 @@ module relay (
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
 			receive_buffer = {receive_buffer[18:0], 1'b0};
-			tmp_signal = {tmp_signal[178:0], tmp_signal[179]};
 		end
 
 		// Buffer decoded signals
@@ -102,7 +99,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		tmp_signal[179],//data_in,
+		data_in,
 		data_in_decoded,
 		data_in_available
 	);
