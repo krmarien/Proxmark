@@ -55,6 +55,15 @@ module relay (
 			receive_buffer = {receive_buffer[18:0], 1'b0};
 		end
 
+		if (hi_simulate_mod_type == `FAKE_READER && mod_type == 3'b0)
+		begin
+			mod_type = `READER_LISTEN;
+		end
+		else if (hi_simulate_mod_type == `FAKE_TAG && mod_type == 3'b0)
+		begin
+			mod_type = `TAGSIM_LISTEN;
+		end
+
 		// Buffer decoded signals
 		if (data_in_available == 1'b1 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)) begin
 			receive_buffer[3:0] = data_in_decoded;
