@@ -31,12 +31,11 @@ module relay (
 	output [2:0] mod_type;
 	output data_out;
 	input relay_raw;
-	output relay_encoded, ssp_din;
+	output relay_encoded;
 
 	reg [2:0] mod_type = 3'b0;
 	wire [0:0] data_out;
 	wire [0:0] relay_encoded;
-	reg [0:0] ssp_din;
 
 	wire data_in_decoded;
 	reg [3:0] div_counter = 4'b0;
