@@ -41,7 +41,7 @@ module relay (
 
 	wire [3:0] data_in_decoded;
 	wire data_in_available;
-	reg [4:0] div_counter = 7'b0;
+	reg [3:0] div_counter = 4'b0;
 
 	reg [19:0] receive_buffer = 20'b0;
 	reg [0:0] half_byte_counter = 1'b0;
@@ -71,7 +71,7 @@ module relay (
 		end
 
 		// When there will be transmitted something in the near future, stop sending carrier
-		if (data_in == 1'b1 && (mod_type == `READER_LISTEN || mod_type == `TAGSIM_LISTEN) && hi_simulate_mod_type != 3'b111)
+		if (data_in == 1'b1 && mod_type == `READER_LISTEN && hi_simulate_mod_type != 3'b111)
 		begin
 			mod_type = 3'b0;
 		end
