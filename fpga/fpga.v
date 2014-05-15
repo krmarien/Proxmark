@@ -116,8 +116,7 @@ relay r(
 	relay_mod_type,
 	relay_out,
 	hisn_ssp_din,
-	relay_relay,
-	//hisn_ssp_din
+	relay_relay
 );
 
 relay_test rt(
