@@ -50,7 +50,7 @@ module relay_decode(
             one_counter = 7'b0;
             zero_counter = 7'b0;
             receiving = 1'b0;
-            data_out = 4'ha;
+            data_out = 4'h0;
             data_available = 1'b0;
         end
     end
