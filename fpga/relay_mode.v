@@ -42,18 +42,12 @@ module relay_mode (
 		div_counter <= div_counter + 1;
 
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
-		begin
 			receive_buffer = {receive_buffer[18:0], 1'b0};
-		end
 
 		if (hi_simulate_mod_type == `FAKE_READER && mod_type == 3'b0)
-		begin
 			mod_type = `READER_LISTEN;
-		end
 		else if (hi_simulate_mod_type == `FAKE_TAG && mod_type == 3'b0)
-		begin
 			mod_type = `TAGSIM_LISTEN;
-		end
 
 		// Buffer decoded signals
 		if (data_in_available == 1'b1 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG)) begin
