@@ -21,6 +21,19 @@ module relay (
 
 	wire [3:0] data_in_decoded;
 
+	reg [179:0] tmp_signal = 180'h00f0f00f00f00f000f;
+	reg [3:0] div_counter = 4'b0;
+
+	always @(posedge clk)
+	begin
+		div_counter <= div_counter + 1;
+
+		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
+		begin
+			tmp_signal = {tmp_signal[178:0], tmp_signal[179]};
+		end
+	end
+
 	relay_mode rm(
 		clk,
 		data_in_decoded,
@@ -42,7 +55,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		data_in,
+		tmp_signal[179],//data_in,
 		data_in_decoded,
 		data_in_available
 	);
