@@ -19,6 +19,8 @@ module relay (
 	input relay_raw;
 	output relay_encoded;
 
+	wire [3:0] data_in_decoded;
+
 	relay_mode rm(
 		clk,
 		data_in_decoded,
