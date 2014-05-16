@@ -21,7 +21,7 @@ module relay (
 
 	wire [3:0] data_in_decoded;
 
-	reg [179:0] tmp_signal = 180'h00f0f00f00f00f000f;
+	reg [399:0] tmp_signal = 400'hf00f0f0ff00f0f0ff0f00f0ff00f0f0f0f0f0ff00ff00f0ff0f00ff00ff00f0f0f0f0ff0f0f0f00ff00ff0f00f0f;
 	reg [3:0] div_counter = 4'b0;
 
 	always @(posedge clk)
@@ -30,7 +30,7 @@ module relay (
 
 		if (div_counter[3:0] == 4'b1000 && (hi_simulate_mod_type == `FAKE_READER || hi_simulate_mod_type == `FAKE_TAG))
 		begin
-			tmp_signal = {tmp_signal[178:0], tmp_signal[179]};
+			tmp_signal = {tmp_signal[398:0], tmp_signal[399]};
 		end
 	end
 
@@ -46,8 +46,8 @@ module relay (
 	relay_encode re(
 		clk,
 		reset,
-		(hi_simulate_mod_type == `FAKE_READER),
-		(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,
+		1'b1,//(hi_simulate_mod_type == `FAKE_READER),
+		tmp_signal[399],//(mod_type != `TAGSIM_MOD && mod_type != `READER_MOD) & relay_raw,
 		relay_encoded
 	);
 
@@ -55,7 +55,7 @@ module relay (
 		clk,
 		reset,
 		(hi_simulate_mod_type == `FAKE_READER),
-		tmp_signal[179],//data_in,
+		relay_encoded,//data_in,
 		data_in_decoded,
 		data_in_available
 	);

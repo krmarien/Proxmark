@@ -603,7 +603,7 @@ void RAMFUNC SnoopIso14443a(uint8_t param) {
 
 		if (rsamples & 0x01) {				// Need two samples to feed Miller and Manchester-Decoder
 
-			if(!TagIsActive) {		// no need to try decoding reader data if the tag is sending
+			if(!TagIsActive && FALSE) {		// no need to try decoding reader data if the tag is sending
 				uint8_t readerdata = (previous_data & 0xF0) | (*data >> 4);
 				if (MillerDecoding(readerdata, (rsamples-1)*4)) {
 					LED_C_ON();
@@ -625,7 +625,7 @@ void RAMFUNC SnoopIso14443a(uint8_t param) {
 				ReaderIsActive = (Uart.state != STATE_UNSYNCD);
 			}
 
-			if(!ReaderIsActive) {		// no need to try decoding tag data if the reader is sending - and we cannot afford the time
+			if(!ReaderIsActive || TRUE) {		// no need to try decoding tag data if the reader is sending - and we cannot afford the time
 				uint8_t tagdata = (previous_data << 4) | (*data & 0x0F);
 				if(ManchesterDecoding(tagdata, 0, (rsamples-1)*4)) {
 					LED_B_ON();

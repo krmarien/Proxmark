@@ -560,7 +560,7 @@ wire sub_carrier;
 assign sub_carrier = ~sub_carrier_cnt[3];
 
 // in READER_MOD: drop carrier for mod_sig_coil==1 (pause); in READER_LISTEN: carrier always on; in other modes: carrier always off
-assign pwr_hi = (ck_1356megb & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (mod_type == `READER_LISTEN)));
+assign pwr_hi = (ck_1356megb & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (mod_type == `READER_LISTEN) || (mod_type == `SNIFFER)));
 
 
 // Enable HF antenna drivers:
