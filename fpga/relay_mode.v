@@ -1,4 +1,3 @@
-`define SNIFFER			3'b000
 `define TAGSIM_LISTEN	3'b001
 `define TAGSIM_MOD		3'b010
 `define READER_LISTEN	3'b011
@@ -6,7 +5,6 @@
 `define FAKE_READER		3'b101
 `define FAKE_TAG		3'b110
 
-`define READER_START_COMM				8'hc0
 `define READER_START_COMM_FIRST_CHAR	8'hc
 `define READER_END_COMM_1 				16'h0000
 `define READER_END_COMM_2 				16'hc000
