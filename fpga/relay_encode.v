@@ -96,6 +96,10 @@ module relay_encode(
         begin
             buffer_in = 8'b0;
             data_out = 1'b0;
+            received_zero = 1'b0;
+            comm_active = 1'b0;
+            data_out_counter = 8'b0;
+            data_out_delay_counter = 7'b0;
         end
     end
 
