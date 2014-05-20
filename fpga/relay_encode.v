@@ -10,7 +10,7 @@ module relay_encode(
 
     reg [0:0] data_out = 1'b0;
 
-    reg [7:0] buffer_in = 4'b0;
+    reg [7:0] buffer_in = 8'b0;
     reg [7:0] data_out_counter = 8'b0;
     reg [6:0] data_out_delay_counter = 7'b0;
 
@@ -78,11 +78,41 @@ module relay_encode(
                 end
             end
         end
-        else if ((buffer_in == 8'h0e || buffer_in == 8'h0f) && mode == 1'b1) // encode tag data
+        else if (mode == 1'b1 && counter[3:0] == 4'b0)
         begin
-            data_out = 1'b1;
-            buffer_in = 8'b0;
-            data_out_counter = 8'b1000000;
+            // start of comm
+            if (buffer_in[7:5] == 3'b111 && buffer_in[3:1] == 3'b0 && comm_active == 1'b0)
+            begin
+                bit_counter = 3'b0;
+                comm_active = 1'b1;
+                received_zero = 1'b0;
+            end
+
+            if (comm_active == 1'b1 && bit_counter == 3'b0)
+            begin
+                // end of comm
+                if (buffer_in == 8'h00)
+                begin
+                    if (received_zero == 1'b1)
+                        comm_active = 1'b0;
+                    received_zero = 1'b1;
+                end
+                // 0xX0 => 0xf0
+                else if (buffer_in[3:0] == 4'h0)
+                begin
+                    data_out_counter = 8'b1000000;
+                    data_out = 1'b1;
+                    received_zero = 1'b0;
+                end
+                // 0x0X => 0x0f
+                else if (buffer_in[7:4] == 4'h0)
+                begin
+                    data_out_delay_counter = 7'b1000000;
+                    data_out_counter = 8'b10000000;
+                    data_out = 1'b0;
+                    received_zero = 1'b0;
+                end
+            end
         end
 
         if (data_out_counter == 8'b0)
@@ -96,10 +126,6 @@ module relay_encode(
         begin
             buffer_in = 8'b0;
             data_out = 1'b0;
-            received_zero = 1'b0;
-            comm_active = 1'b0;
-            data_out_counter = 8'b0;
-            data_out_delay_counter = 7'b0;
         end
     end
 
