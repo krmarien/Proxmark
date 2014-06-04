@@ -1,0 +1,14 @@
+# Relay Attack
+
+This code is based on the official Proxmark3 code.
+But a lot of Verilog code (in de fpga directory) was removed and replaced by code for a relay attack.
+
+Updated:
+- all code in fpga/
+- added commands to armsrc/iso14443a.c
+- added armsrc/relay.c
+- updated armsrc/appmain.c and armsrc/apps.h
+- added commands to include/usb_cmd.h
+- added commands to client/cmdhf14a.c
+- added commands to client/cmdmain.c
+- added client/cmdrelay.c and client/cmdrelay.h
